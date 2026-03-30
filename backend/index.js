@@ -1,8 +1,9 @@
-const express = require("express")
-const cors = require("cors")
-const {connect} = require("./db")
-const router = require("./Routes/index")
-const port = 5000
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const { connect } = require("./db");
+const router = require("./Routes/index");
+const port = process.env.PORT || 5000;
 
 const app = express()
 
