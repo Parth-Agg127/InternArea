@@ -25,7 +25,8 @@ const index = () => {
     perks: "",
     numberOfOpening: "",
     CTC: "",
-    startDate: "",
+    Experience: "",
+    StartDate: "",
     AdditionalInfo: "",
   });
 
@@ -244,6 +245,23 @@ const index = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   <div className="flex items-center mb-1">
+                    <Users className="h-4 w-4 mr-1" />
+                    Experience*
+                  </div>
+                </label>
+                <input
+                  type="text"
+                  name="Experience"
+                  value={formData.Experience}
+                  onChange={handleChange}
+                  className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  placeholder="e.g. 1-3 years"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  <div className="flex items-center mb-1">
                     <DollarSign className="h-4 w-4 mr-1" />
                     CTC*
                   </div>
@@ -267,8 +285,8 @@ const index = () => {
                 </label>
                 <input
                   type="date"
-                  name="startDate"
-                  value={formData.startDate}
+                  name="StartDate"
+                  value={formData.StartDate}
                   onChange={handleChange}
                   className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
