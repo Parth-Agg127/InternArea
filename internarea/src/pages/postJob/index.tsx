@@ -49,8 +49,8 @@ const index = () => {
     }
     try {
       setisloading(true);
-      const res = await axios.post(//"https://internshala-clone-y2p2.onrender.com/api/job"
-      "http://localhost:5000/api/job", formData);
+      const res = await axios.post(//"https://internarea-1-n2uz.onrender.com/api/job"
+      "https://internarea-1-n2uz.onrender.com/api/job", formData);
       toast.success("job posted successfuly");
       router.push("/adminpanel");
     } catch (error) {

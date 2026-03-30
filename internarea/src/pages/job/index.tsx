@@ -130,7 +130,7 @@ const index = () => {
     const fetchdata = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:5000/api/job",
+          "https://internarea-1-n2uz.onrender.com/api/job",
         );
         setjob(res.data);
         setfilteredjobs(res.data);
