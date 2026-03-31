@@ -87,6 +87,12 @@ const Navbar = () => {
               >
                 Jobs
               </Link>
+              <Link
+                href="/publicspace"
+                className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                Public Space
+              </Link>
               <div className="flex items-center bg-gray-100 rounded-full px-4 py-2">
                 <Search className="text-gray-400" size={16} />
                 <input
@@ -214,6 +220,13 @@ const Navbar = () => {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Jobs
+            </Link>
+            <Link
+              href="/publicspace"
+              className="block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Public Space
             </Link>
 
             {user && (
