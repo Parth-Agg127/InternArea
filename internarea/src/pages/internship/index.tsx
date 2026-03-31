@@ -225,30 +225,30 @@ const index = () => {
                   </h2>
                   <p className="text-gray-600 mb-4">{internship.company}</p>
 
-                  <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
                     <div className="flex items-center space-x-2 text-gray-600">
-                      <PlayCircle className="h-5 w-5" />
+                      <PlayCircle className="h-5 w-5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium">Start Date</p>
                         <p className="text-sm">{internship.startDate}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
-                      <Pin className="h-5 w-5" />
+                      <Pin className="h-5 w-5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium">Location</p>
                         <p className="text-sm">{internship.location}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
-                      <DollarSign className="h-5 w-5" />
+                      <DollarSign className="h-5 w-5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium">Stipend</p>
                         <p className="text-sm">{internship.stipend}</p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center space-x-2">
                       <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
                         Internship

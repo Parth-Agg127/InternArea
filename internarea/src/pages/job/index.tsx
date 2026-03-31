@@ -308,37 +308,37 @@ const index = () => {
                   </h2>
                   <p className="text-gray-600 mb-4">{job.company}</p>
 
-                  <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
                     <div className="flex items-center space-x-2 text-gray-600">
-                      <PlayCircle className="h-5 w-5" />
+                      <PlayCircle className="h-5 w-5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium">Category</p>
                         <p className="text-sm">{job.category}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
-                      <Pin className="h-5 w-5" />
+                      <Pin className="h-5 w-5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium">Location</p>
                         <p className="text-sm">{job.location}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
-                      <Calendar className="h-5 w-5" />
+                      <Calendar className="h-5 w-5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium">Experience</p>
                         <p className="text-sm">{job.Experience}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 text-gray-600">
-                      <DollarSign className="h-5 w-5" />
+                      <DollarSign className="h-5 w-5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium">CTC</p>
                         <p className="text-sm">{job.CTC}</p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center space-x-2">
                       <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
                         Jobs

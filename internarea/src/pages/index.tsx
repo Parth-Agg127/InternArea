@@ -250,9 +250,6 @@ export default function SvgSlider() {
       </div>
       {/* Category section */}
       <div className="mb-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Latest internships on Intern Area
-        </h2>
         <div className="flex flex-wrap gap-4">
           <span className="text-gray-700 font-medium">POPULAR CATEGORIES:</span>
           {categories.map((category) => (
@@ -269,6 +266,9 @@ export default function SvgSlider() {
             </button>
           ))}
         </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          Latest internships on Intern Area
+        </h2>
       </div>
       {/* INternship grid   */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
