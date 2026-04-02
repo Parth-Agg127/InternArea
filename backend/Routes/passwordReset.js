@@ -35,12 +35,18 @@ function generatePassword(length = 10) {
 
 // POST /api/password-reset/reset — Reset password for email/password users
 router.post("/reset", async (req, res) => {
-  const { identifier } = req.body;
+  const { identifier, newPassword } = req.body;
 
   if (!identifier || !identifier.trim()) {
     return res
       .status(400)
       .json({ error: "Email or phone number is required" });
+  }
+
+  if (!newPassword || newPassword.length < 6) {
+    return res
+      .status(400)
+      .json({ error: "New password must be at least 6 characters long" });
   }
 
   const trimmedIdentifier = identifier.trim();
@@ -88,9 +94,6 @@ router.post("/reset", async (req, res) => {
       });
     }
 
-    // Generate new password (uppercase + lowercase letters only)
-    const newPassword = generatePassword(10);
-
     // Hash the new password and update the user
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
@@ -105,11 +108,10 @@ router.post("/reset", async (req, res) => {
     });
     await resetRecord.save();
 
-    // Return the generated password to the frontend
+    // Return success to the frontend
     res.status(200).json({
       success: true,
       message: "Password has been reset successfully!",
-      newPassword: newPassword,
       userName: user.name,
     });
   } catch (error) {

@@ -5,11 +5,13 @@ import {
   Phone,
   ArrowLeft,
   Loader2,
-  Copy,
   CheckCircle2,
   AlertTriangle,
   ShieldAlert,
   Info,
+  Eye,
+  EyeOff,
+  Zap,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -20,7 +22,6 @@ const API_URL = "https://internarea-1-n2uz.onrender.com/api";
 type ResetState = "form" | "loading" | "success" | "error";
 
 interface ResetResult {
-  newPassword: string;
   userName: string;
 }
 
@@ -31,18 +32,50 @@ interface ResetError {
 
 const ForgotPassword = () => {
   const [identifier, setIdentifier] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  
   const [state, setState] = useState<ResetState>("form");
   const [result, setResult] = useState<ResetResult | null>(null);
   const [error, setError] = useState<ResetError | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const isEmail = identifier.includes("@");
+
+  const handleGeneratePassword = () => {
+    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lowercase = "abcdefghijklmnopqrstuvwxyz";
+    const allChars = uppercase + lowercase;
+
+    let generated = "";
+    generated += uppercase[Math.floor(Math.random() * uppercase.length)];
+    generated += lowercase[Math.floor(Math.random() * lowercase.length)];
+
+    for (let i = 2; i < 10; i++) {
+      generated += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+
+    generated = generated.split("").sort(() => Math.random() - 0.5).join("");
+
+    setNewPassword(generated);
+    setConfirmPassword(generated);
+    setShowPassword(true); // Automatically show it so they can see what was generated
+    toast.success("Secure password generated!");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!identifier.trim()) {
       toast.error("Please enter your email or phone number");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -53,10 +86,10 @@ const ForgotPassword = () => {
     try {
       const res = await axios.post(`${API_URL}/password-reset/reset`, {
         identifier: identifier.trim(),
+        newPassword: newPassword,
       });
 
       setResult({
-        newPassword: res.data.newPassword,
         userName: res.data.userName,
       });
       setState("success");
@@ -77,21 +110,14 @@ const ForgotPassword = () => {
     }
   };
 
-  const handleCopy = async () => {
-    if (result?.newPassword) {
-      await navigator.clipboard.writeText(result.newPassword);
-      setCopied(true);
-      toast.success("Password copied to clipboard!");
-      setTimeout(() => setCopied(false), 3000);
-    }
-  };
-
   const handleReset = () => {
     setState("form");
     setIdentifier("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
     setResult(null);
     setError(null);
-    setCopied(false);
   };
 
   return (
@@ -111,9 +137,9 @@ const ForgotPassword = () => {
           <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-200">
             <KeyRound size={32} className="text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">Forgot Password</h2>
+          <h2 className="text-3xl font-bold text-gray-900">Reset Password</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Enter your registered email or phone number to reset your password
+            Enter your account details to set a new password
           </p>
         </div>
 
@@ -143,19 +169,62 @@ const ForgotPassword = () => {
                     required
                   />
                 </div>
-                <p className="mt-1.5 text-xs text-gray-400">
-                  We&apos;ll look up your account and generate a new password
-                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-gray-700">
+                    New Password
+                    </label>
+                    <button
+                    type="button"
+                    onClick={handleGeneratePassword}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                        <Zap size={14} fill="currentColor" />
+                        Auto-Generate
+                    </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="block w-full text-gray-800 px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm transition-shadow"
+                    placeholder="Min 6 characters"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="block w-full text-gray-800 px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm transition-shadow"
+                    placeholder="Min 6 characters"
+                    required
+                  />
+                </div>
               </div>
 
               {/* Info box */}
               <div className="flex gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
                 <Info size={16} className="text-blue-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-700">
-                  This feature is available only for email/password accounts.
-                  You can reset your password once per day. A new password with
-                  only letters (uppercase and lowercase) will be generated for
-                  you.
+                  You can only reset your password once per day. Feel free to use the Auto-Generate button to enforce maximum security.
                 </p>
               </div>
 
@@ -173,7 +242,7 @@ const ForgotPassword = () => {
             <div className="flex flex-col items-center justify-center py-8">
               <Loader2 size={40} className="animate-spin text-blue-600 mb-4" />
               <p className="text-gray-600 font-medium">
-                Generating your new password...
+                Verifying and resetting your password...
               </p>
               <p className="text-gray-400 text-sm mt-1">
                 This may take a moment
@@ -193,51 +262,12 @@ const ForgotPassword = () => {
                   Password Reset Successful!
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
-                  Hi {result.userName}, your new password is ready
-                </p>
-              </div>
-
-              {/* Password display */}
-              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-4">
-                <p className="text-xs text-gray-500 mb-2 font-medium text-center">
-                  YOUR NEW PASSWORD
-                </p>
-                <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 px-4 py-3">
-                  <code className="text-xl font-mono font-bold text-gray-900 tracking-widest select-all">
-                    {result.newPassword}
-                  </code>
-                  <button
-                    onClick={handleCopy}
-                    className={`ml-3 p-2 rounded-lg transition-colors ${
-                      copied
-                        ? "bg-green-100 text-green-600"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                    title="Copy password"
-                  >
-                    {copied ? (
-                      <CheckCircle2 size={18} />
-                    ) : (
-                      <Copy size={18} />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Warning */}
-              <div className="flex gap-2 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                <AlertTriangle
-                  size={16}
-                  className="text-amber-500 shrink-0 mt-0.5"
-                />
-                <p className="text-xs text-amber-700">
-                  Please save this password securely. You can use it to log in
-                  to your account. You can only reset your password once per day.
+                  Hi {result.userName}, your new password has been securely saved.
                 </p>
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 mt-6">
                 <Link
                   href="/emailauth"
                   className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
@@ -318,7 +348,7 @@ const ForgotPassword = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 mt-6">
                 <button
                   onClick={handleReset}
                   className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
