@@ -15,6 +15,15 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  password: {
+    type: String,
+    default: "",
+  },
+  authProvider: {
+    type: String,
+    enum: ["google", "email"],
+    default: "google",
+  },
   photo: {
     type: String,
     default: "",

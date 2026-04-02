@@ -31,6 +31,7 @@ const Navbar = () => {
 
   const handlelogout = () => {
     signOut(auth);
+    localStorage.removeItem("emailUser");
     setIsMobileMenuOpen(false);
   };
 
@@ -110,11 +111,19 @@ const Navbar = () => {
                 {user ? (
                   <div className="flex items-center space-x-2">
                     <Link href="/profile">
-                      <img
-                        src={user.photo}
-                        alt={user.name}
-                        className="w-8 h-8 rounded-full"
-                      />
+                      {user.photo ? (
+                        <img
+                          src={user.photo}
+                          alt={user.name}
+                          className="w-8 h-8 rounded-full"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-blue-600 font-semibold text-sm">
+                            {user.name?.charAt(0) || "U"}
+                          </span>
+                        </div>
+                      )}
                     </Link>
                     <button
                       className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
@@ -151,6 +160,12 @@ const Navbar = () => {
                         Continue with Google
                       </span>
                     </button>
+                    <Link
+                      href="/emailauth"
+                      className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                    >
+                      Login with Email
+                    </Link>
                     <a
                       href="/adminlogin"
                       className="text-gray-600 hover:text-gray-800"
@@ -164,11 +179,19 @@ const Navbar = () => {
               {/* Mobile: show profile pic if logged in */}
               {user && (
                 <Link href="/profile" className="md:hidden">
-                  <img
-                    src={user.photo}
-                    alt={user.name}
-                    className="w-8 h-8 rounded-full"
-                  />
+                  {user.photo ? (
+                    <img
+                      src={user.photo}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span className="text-blue-600 font-semibold text-sm">
+                        {user.name?.charAt(0) || "U"}
+                      </span>
+                    </div>
+                  )}
                 </Link>
               )}
 
@@ -246,11 +269,19 @@ const Navbar = () => {
             {user ? (
               <div className="space-y-3">
                 <div className="flex items-center space-x-3 px-4 py-2">
-                  <img
-                    src={user.photo}
-                    alt={user.name}
-                    className="w-10 h-10 rounded-full"
-                  />
+                  {user.photo ? (
+                    <img
+                      src={user.photo}
+                      alt={user.name}
+                      className="w-10 h-10 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span className="text-blue-600 font-bold">
+                        {user.name?.charAt(0) || "U"}
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm font-medium text-gray-900">
                       {user.name}
@@ -291,6 +322,13 @@ const Navbar = () => {
                   </svg>
                   <span className="text-gray-700">Continue with Google</span>
                 </button>
+                <Link
+                  href="/emailauth"
+                  className="block text-center px-4 py-3 text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg font-medium transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Login with Email
+                </Link>
                 <a
                   href="/adminlogin"
                   className="block text-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-800 rounded-lg font-medium transition-colors"

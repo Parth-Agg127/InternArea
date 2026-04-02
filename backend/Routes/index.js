@@ -7,6 +7,8 @@ const application = require("./application");
 const user = require("./user");
 const friend = require("./friend");
 const post = require("./post");
+const auth = require("./auth");
+const passwordReset = require("./passwordReset");
 
 router.use("/admin", admin);
 router.use("/internship", intern);
@@ -15,5 +17,8 @@ router.use("/application", application);
 router.use("/user", user);
 router.use("/friend", friend);
 router.use("/post", post);
+router.use("/auth", auth);
+router.use("/password-reset", passwordReset);
 
 module.exports = router;
+

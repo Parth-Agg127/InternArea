@@ -15,34 +15,59 @@ import axios from "axios";
 function AuthListener() {
   const dispatch = useDispatch();
   useEffect(() => {
+    // Check for email/password user in localStorage first
+    const storedUser = localStorage.getItem("emailUser");
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        dispatch(login(userData));
+      } catch (e) {
+        localStorage.removeItem("emailUser");
+      }
+    }
+
+    // Listen for Firebase Google auth state changes
     auth.onAuthStateChanged(async (authuser) => {
       if (authuser) {
-        dispatch(
-          login({
-            uid: authuser.uid,
-            photo: authuser.photoURL,
-            name: authuser.displayName,
-            email: authuser.email,
-            phoneNumber: authuser.phoneNumber,
-          })
+        // Only handle Google auth users (email/password users are handled above)
+        const providerData = authuser.providerData;
+        const isGoogleUser = providerData.some(
+          (p) => p.providerId === "google.com"
         );
-        // Sync Firebase user to MongoDB for friend/post system
-        try {
-          await axios.post(
-            "https://internarea-1-n2uz.onrender.com/api/user/sync",
-            {
-              firebaseUid: authuser.uid,
+
+        if (isGoogleUser) {
+          dispatch(
+            login({
+              uid: authuser.uid,
+              photo: authuser.photoURL,
               name: authuser.displayName,
               email: authuser.email,
-              photo: authuser.photoURL,
               phoneNumber: authuser.phoneNumber,
-            }
+              authProvider: "google",
+            })
           );
-        } catch (err) {
-          console.error("User sync error:", err);
+          // Sync Firebase user to MongoDB for friend/post system
+          try {
+            await axios.post(
+              "https://internarea-1-n2uz.onrender.com/api/user/sync",
+              {
+                firebaseUid: authuser.uid,
+                name: authuser.displayName,
+                email: authuser.email,
+                photo: authuser.photoURL,
+                phoneNumber: authuser.phoneNumber,
+              }
+            );
+          } catch (err) {
+            console.error("User sync error:", err);
+          }
         }
       } else {
-        dispatch(logout());
+        // Only logout if there's no email user stored
+        const emailUser = localStorage.getItem("emailUser");
+        if (!emailUser) {
+          dispatch(logout());
+        }
       }
     });
   }, [dispatch]);
