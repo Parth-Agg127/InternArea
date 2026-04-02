@@ -4,8 +4,8 @@ import { auth, provider } from "../firebase/firebase";
 import { ChevronDown, ChevronUp, Menu, Search, X } from "lucide-react";
 import { signInWithPopup, signOut } from "firebase/auth";
 import { toast } from "react-toastify";
-import { useSelector } from "react-redux";
-import { selectuser } from "@/Feature/Userslice";
+import { logout, selectuser } from "@/Feature/Userslice";
+import { useDispatch, useSelector } from "react-redux";
 
 interface User {
   name: string;
@@ -15,6 +15,7 @@ interface User {
 
 const Navbar = () => {
   const user = useSelector(selectuser);
+  const dispatch = useDispatch();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -32,6 +33,7 @@ const Navbar = () => {
   const handlelogout = () => {
     signOut(auth);
     localStorage.removeItem("emailUser");
+    dispatch(logout());
     setIsMobileMenuOpen(false);
   };
 
@@ -69,9 +71,9 @@ const Navbar = () => {
           <div className="flex justify-between h-16 items-center">
             {/* Logo */}
             <div className="shrink-0">
-              <a href="/" className="text-xl font-bold text-blue-600">
+              <Link href="/" className="text-xl font-bold text-blue-600 cursor-pointer block">
                 <img src={"/logo.png"} alt="InternArea Logo" className="h-16" />
-              </a>
+              </Link>
             </div>
 
             {/* Desktop Navigation Links */}
