@@ -2,23 +2,61 @@ const express = require("express");
 const router = express.Router();
 const application = require("../Model/Application");
 
+const User = require("../Model/User");
+
+// Helper for Plan Limits
+const planLimits = {
+  Free: 1,
+  Bronze: 3,
+  Silver: 5,
+  Gold: Infinity,
+};
+
 router.post("/", async (req, res) => {
-  const applicationipdata = new application({
-    company: req.body.company,
-    category: req.body.category,
-    coverLetter: req.body.coverLetter,
-    user: req.body.user,
-    Application: req.body.Application,
-    body: req.body.body,
-  });
-  await applicationipdata
-    .save()
-    .then((data) => {
-      res.send(data);
-    })
-    .catch((error) => {
-      console.log(error);
+  try {
+    // 1. Subscription Check Logic
+    const requestedUserId = req.body.user._id || req.body.user.uid || req.body.user.id;
+    if (!requestedUserId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+
+    // Attempt to find user by their mongo ID or firebaseUid
+    let dbUser = await User.findById(requestedUserId).catch(() => null);
+    if (!dbUser) {
+      dbUser = await User.findOne({ firebaseUid: requestedUserId });
+    }
+
+    if (dbUser) {
+      const userPlan = dbUser.currentPlan || "Free";
+      const maxLimit = planLimits[userPlan] || 1;
+      
+      if (dbUser.applicationsUsedThisMonth >= maxLimit && maxLimit !== Infinity) {
+        return res.status(403).json({ 
+          error: `You have reached your monthly application limit for the ${userPlan} plan. Please upgrade your subscription to apply for more.`
+        });
+      }
+
+      // Increment their usage
+      dbUser.applicationsUsedThisMonth += 1;
+      await dbUser.save();
+    }
+
+    // 2. Original Application Code
+    const applicationipdata = new application({
+      company: req.body.company,
+      category: req.body.category,
+      coverLetter: req.body.coverLetter,
+      user: req.body.user,
+      Application: req.body.Application,
+      body: req.body.body,
     });
+    
+    const data = await applicationipdata.save();
+    res.send(data);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 router.get("/", async (req, res) => {
   try {

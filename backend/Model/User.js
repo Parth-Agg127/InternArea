@@ -59,6 +59,18 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  currentPlan: {
+    type: String,
+    enum: ["Free", "Bronze", "Silver", "Gold"],
+    default: "Free",
+  },
+  applicationsUsedThisMonth: {
+    type: Number,
+    default: 0,
+  },
+  planExpiryDate: {
+    type: Date,
+  },
 });
 
 module.exports = mongoose.model("User", UserSchema);
