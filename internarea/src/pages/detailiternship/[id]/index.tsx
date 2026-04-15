@@ -122,9 +122,21 @@ const index = () => {
       await axios.post("https://internarea-1-n2uz.onrender.com/api/application",applicationdata)
       toast.success("Application submit successfully")
       router.push('/internship')
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      toast.error("Failed to submit application")
+      if (error.response && error.response.status === 403) {
+        toast.error(
+          error.response.data.error ||
+            "You have reached your monthly application limit. Please upgrade your subscription.",
+          { autoClose: 6000 }
+        );
+        // Auto-redirect to subscription page after a short delay
+        setTimeout(() => {
+          router.push("/subscription");
+        }, 3000);
+      } else {
+        toast.error("Failed to submit application")
+      }
     }
   }
 

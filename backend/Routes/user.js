@@ -135,4 +135,34 @@ router.get("/:firebaseUid/postlimit", async (req, res) => {
   }
 });
 
+// GET /api/user/:firebaseUid/subscription — Get user's subscription info
+router.get("/:firebaseUid/subscription", async (req, res) => {
+  try {
+    const user = await User.findOne({ firebaseUid: req.params.firebaseUid });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const planLimits = {
+      Free: 1,
+      Bronze: 3,
+      Silver: 5,
+      Gold: Infinity,
+    };
+
+    const currentPlan = user.currentPlan || "Free";
+
+    res.status(200).json({
+      currentPlan,
+      applicationsUsedThisMonth: user.applicationsUsedThisMonth || 0,
+      planExpiryDate: user.planExpiryDate || null,
+      maxApplications: planLimits[currentPlan] || 1,
+    });
+  } catch (error) {
+    console.error("Get subscription info error:", error);
+    res.status(500).json({ error: "Failed to get subscription info" });
+  }
+});
+
 module.exports = router;

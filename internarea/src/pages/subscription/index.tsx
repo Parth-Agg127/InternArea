@@ -1,9 +1,10 @@
 import Head from "next/head";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectuser } from "@/Feature/Userslice";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { Check, Crown, Shield, Star, Zap } from "lucide-react";
 
 // Function to inject Razorpay script dynamically
 const loadScript = (src: string) => {
@@ -20,39 +21,91 @@ const plans = [
   {
     name: "Free",
     price: "₹0",
-    features: ["1 Internship Application/month", "Basic Support"],
+    priceSubtext: "forever",
+    features: [
+      "1 Application/month (Internships + Jobs)",
+      "Basic Support",
+    ],
     buttonText: "Current Plan",
     disabled: true,
+    icon: <Shield className="h-8 w-8" />,
+    gradient: "from-gray-400 to-gray-500",
+    ring: "ring-gray-300",
   },
   {
     name: "Bronze",
-    price: "₹100/month",
-    features: ["3 Internship Applications/month", "Email Support", "Resume Template"],
+    price: "₹100",
+    priceSubtext: "/month",
+    features: [
+      "3 Applications/month (Internships + Jobs)",
+      "Email Support",
+      "Resume Template",
+    ],
     buttonText: "Upgrade to Bronze",
     disabled: false,
-    planId: "Bronze"
+    planId: "Bronze",
+    icon: <Star className="h-8 w-8" />,
+    gradient: "from-amber-500 to-amber-600",
+    ring: "ring-amber-300",
   },
   {
     name: "Silver",
-    price: "₹300/month",
-    features: ["5 Internship Applications/month", "Priority Email Support", "Resume Feedback"],
+    price: "₹300",
+    priceSubtext: "/month",
+    features: [
+      "5 Applications/month (Internships + Jobs)",
+      "Priority Email Support",
+      "Resume Feedback",
+    ],
     buttonText: "Upgrade to Silver",
     disabled: false,
-    planId: "Silver"
+    planId: "Silver",
+    icon: <Zap className="h-8 w-8" />,
+    gradient: "from-slate-400 to-slate-600",
+    ring: "ring-slate-400",
   },
   {
     name: "Gold",
-    price: "₹1000/month",
-    features: ["Unlimited Applications", "1-on-1 Mentorship", "Direct Referrals"],
+    price: "₹1000",
+    priceSubtext: "/month",
+    features: [
+      "Unlimited Applications (Internships + Jobs)",
+      "1-on-1 Mentorship",
+      "Direct Referrals",
+      "Priority Listing",
+    ],
     buttonText: "Upgrade to Gold",
     disabled: false,
-    planId: "Gold"
+    planId: "Gold",
+    icon: <Crown className="h-8 w-8" />,
+    gradient: "from-yellow-400 to-yellow-600",
+    ring: "ring-yellow-400",
+    popular: true,
   },
 ];
 
 export default function Subscription() {
   const user = useSelector(selectuser);
   const [loading, setLoading] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState("Free");
+
+  // Fetch the user's current plan
+  useEffect(() => {
+    const fetchPlan = async () => {
+      if (!user) return;
+      const uid = user.uid || user.firebaseUid || user._id;
+      if (!uid) return;
+      try {
+        const res = await axios.get(
+          `https://internarea-1-n2uz.onrender.com/api/user/${uid}/subscription`
+        );
+        setCurrentPlan(res.data.currentPlan || "Free");
+      } catch (err) {
+        console.error("Failed to fetch plan:", err);
+      }
+    };
+    fetchPlan();
+  }, [user]);
 
   const displayRazorpay = async (plan: any) => {
     if (!user) {
@@ -87,7 +140,8 @@ export default function Subscription() {
           description: `Upgrade to ${plan.name} Plan`,
           order_id: data.order.id,
           handler: function (response: any) {
-            toast.success(`Payment Successful! Signature: ${response.razorpay_signature}`);
+            toast.success(`Payment Successful! Your plan has been upgraded to ${plan.name}.`);
+            setCurrentPlan(plan.name);
             // The backend webhook will automatically catch this and send the email
           },
           prefill: {
@@ -114,6 +168,12 @@ export default function Subscription() {
     setLoading(false);
   };
 
+  const isCurrentPlan = (planName: string) => planName === currentPlan;
+  const isPlanDowngrade = (planName: string) => {
+    const order = ["Free", "Bronze", "Silver", "Gold"];
+    return order.indexOf(planName) < order.indexOf(currentPlan);
+  };
+
   return (
     <>
       <Head>
@@ -126,60 +186,101 @@ export default function Subscription() {
               Choose the right plan for you
             </h2>
             <p className="max-w-2xl mt-4 mx-auto text-xl text-gray-500">
-              Upgrade your account to unlock more internship opportunities and supercharge your career.
+              Upgrade your account to unlock more internship and job application opportunities and supercharge your career.
             </p>
+            {user && (
+              <div className="mt-4 inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
+                <span>Your current plan:&nbsp;</span>
+                <span className="font-bold">{currentPlan}</span>
+              </div>
+            )}
           </div>
 
           <div className="mt-16 flex flex-wrap justify-center gap-8">
-            {plans.map((plan) => (
-              <div
-                key={plan.name}
-                className="bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col p-8 w-full md:w-80 hover:shadow-xl transition-shadow duration-300"
-              >
-                <div className="mb-6 border-b border-gray-200 pb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-4xl font-extrabold text-blue-600">{plan.price}</p>
-                </div>
-                
-                <ul className="mb-8 flex-1 space-y-4">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <svg
-                        className="h-6 w-6 text-green-500 mr-2 flex-shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      <span className="text-gray-600">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+            {plans.map((plan) => {
+              const isCurrent = isCurrentPlan(plan.name);
+              const isDowngrade = isPlanDowngrade(plan.name);
+              const shouldDisable = plan.disabled || isCurrent || isDowngrade;
 
-                <button
-                  onClick={() => !plan.disabled && displayRazorpay(plan)}
-                  disabled={plan.disabled || loading}
-                  className={`w-full py-4 px-6 rounded-lg font-bold text-center transition-colors duration-200 ${
-                    plan.disabled
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+              return (
+                <div
+                  key={plan.name}
+                  className={`relative bg-white border rounded-2xl shadow-sm flex flex-col p-8 w-full md:w-80 hover:shadow-xl transition-all duration-300 ${
+                    isCurrent
+                      ? `border-2 border-blue-500 ring-2 ring-blue-200`
+                      : plan.popular
+                      ? "border-2 border-yellow-400"
+                      : "border-gray-200"
                   }`}
                 >
-                  {loading && !plan.disabled ? "Processing..." : plan.buttonText}
-                </button>
-              </div>
-            ))}
+                  {/* Current Plan Badge */}
+                  {isCurrent && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow">
+                        YOUR PLAN
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Popular Badge */}
+                  {plan.popular && !isCurrent && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-yellow-500 text-white text-xs font-bold px-4 py-1 rounded-full shadow">
+                        MOST POPULAR
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="mb-6 border-b border-gray-200 pb-6">
+                    <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${plan.gradient} text-white mb-4`}>
+                      {plan.icon}
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                    <p className="text-4xl font-extrabold text-blue-600">
+                      {plan.price}
+                      <span className="text-base font-normal text-gray-500">{plan.priceSubtext}</span>
+                    </p>
+                  </div>
+                  
+                  <ul className="mb-8 flex-1 space-y-4">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-start">
+                        <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                          <Check className="h-4 w-4 text-green-600" />
+                        </div>
+                        <span className="text-gray-600">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => !shouldDisable && displayRazorpay(plan)}
+                    disabled={shouldDisable || loading}
+                    className={`w-full py-4 px-6 rounded-lg font-bold text-center transition-all duration-200 ${
+                      isCurrent
+                        ? "bg-blue-100 text-blue-600 cursor-default"
+                        : shouldDisable
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    }`}
+                  >
+                    {loading && !shouldDisable
+                      ? "Processing..."
+                      : isCurrent
+                      ? "✓ Current Plan"
+                      : isDowngrade
+                      ? "Already on higher plan"
+                      : plan.buttonText}
+                  </button>
+                </div>
+              );
+            })}
           </div>
           
           <div className="mt-12 text-center text-sm text-gray-500">
             <p>Payments are securely processed via Razorpay.</p>
             <p className="font-bold mt-2">Note: Payments are only accepted between 10:00 AM and 11:00 AM IST strictly.</p>
+            <p className="mt-2 text-gray-400">Application limits are shared across Internships and Jobs.</p>
           </div>
         </div>
       </div>
