@@ -10,6 +10,7 @@ const post = require("./post");
 const auth = require("./auth");
 const passwordReset = require("./passwordReset");
 const payment = require("./payment");
+const resume = require("./resume");
 
 router.use("/admin", admin);
 router.use("/internship", intern);
@@ -21,6 +22,7 @@ router.use("/post", post);
 router.use("/auth", auth);
 router.use("/password-reset", passwordReset);
 router.use("/payment", payment);
+router.use("/resume", resume);
 
 module.exports = router;
 

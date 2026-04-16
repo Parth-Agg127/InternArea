@@ -1,5 +1,5 @@
 import { selectuser } from "@/Feature/Userslice";
-import { Crown, ExternalLink, Mail, Shield, Star, User, Zap } from "lucide-react";
+import { Crown, Download, ExternalLink, FileText, Mail, Shield, Star, User, Zap } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -19,6 +19,11 @@ interface SubscriptionInfo {
   applicationsUsedThisMonth: number;
   planExpiryDate: string | null;
   maxApplications: number;
+}
+
+interface ResumeInfo {
+  hasResume: boolean;
+  resumeUrl: string;
 }
 
 const planStyles: Record<string, { bg: string; text: string; border: string; icon: React.ReactNode; gradient: string }> = {
@@ -56,6 +61,8 @@ const index = () => {
   const user = useSelector(selectuser);
   const [subInfo, setSubInfo] = useState<SubscriptionInfo | null>(null);
   const [subLoading, setSubLoading] = useState(true);
+  const [resumeInfo, setResumeInfo] = useState<ResumeInfo | null>(null);
+  const [resumeLoading, setResumeLoading] = useState(true);
 
   useEffect(() => {
     const fetchSubscription = async () => {
@@ -68,13 +75,39 @@ const index = () => {
           `https://internarea-1-n2uz.onrender.com/api/user/${uid}/subscription`
         );
         setSubInfo(res.data);
-      } catch (err) {
-        console.error("Failed to fetch subscription info:", err);
+      } catch (err: any) {
+        // Silently handle — fails when Render server is sleeping or in local dev
+        console.warn("Subscription fetch failed (non-fatal):", err.response?.status || err.message);
       } finally {
         setSubLoading(false);
       }
     };
     fetchSubscription();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchResume = async () => {
+      if (!user) return;
+      const uid = user.uid || user.firebaseUid || user._id;
+      if (!uid) return;
+
+      try {
+        const res = await axios.get(
+          `https://internarea-1-n2uz.onrender.com/api/resume/${uid}`
+        );
+        setResumeInfo(res.data);
+      } catch (err: any) {
+        // 404 is expected when user has no resume — set fallback state
+        if (err.response?.status === 404) {
+          setResumeInfo({ hasResume: false, resumeUrl: "" });
+        } else {
+          console.warn("Resume fetch failed (non-fatal):", err.response?.status || err.message);
+        }
+      } finally {
+        setResumeLoading(false);
+      }
+    };
+    fetchResume();
   }, [user]);
 
   const plan = subInfo?.currentPlan || "Free";
@@ -200,6 +233,83 @@ const index = () => {
                     </div>
                   ) : (
                     <p className="text-gray-500 text-center py-2 text-sm">Could not load subscription info</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Resume Card */}
+              <div className="rounded-xl border-2 border-purple-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-purple-500 to-blue-600 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-white/20 rounded-lg p-2">
+                      <FileText className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-lg">Professional Resume</h3>
+                      <p className="text-white/80 text-sm">Auto-attached to applications</p>
+                    </div>
+                  </div>
+                  {resumeInfo?.hasResume && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white">
+                      ✅ READY
+                    </span>
+                  )}
+                </div>
+
+                <div className="px-6 py-5 bg-white">
+                  {resumeLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-purple-500"></div>
+                      <span className="ml-3 text-gray-500 text-sm">Loading resume info...</span>
+                    </div>
+                  ) : resumeInfo?.hasResume && resumeInfo.resumeUrl ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between bg-green-50 rounded-lg px-4 py-3">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-5 w-5 text-green-600" />
+                          <div>
+                            <p className="font-medium text-green-800">Resume Attached ✅</p>
+                            <p className="text-green-600 text-sm">Your resume is ready and attached to your profile</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <a
+                          href={resumeInfo.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 inline-flex items-center justify-center px-4 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download Resume
+                        </a>
+                        <Link
+                          href="/resume-builder"
+                          className="flex-1 inline-flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                          Create New (₹50)
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 space-y-4">
+                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-purple-100 text-purple-600">
+                        <FileText className="h-7 w-7" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">No Resume Yet</p>
+                        <p className="text-gray-500 text-sm mt-1">
+                          Create a professional resume and it will be auto-attached to your applications.
+                        </p>
+                      </div>
+                      <Link
+                        href="/resume-builder"
+                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-blue-700 shadow-md hover:shadow-lg transition-all duration-200"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Create Your Resume — ₹50
+                      </Link>
+                    </div>
                   )}
                 </div>
               </div>

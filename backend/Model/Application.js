@@ -14,5 +14,6 @@ const Applicationipschema = new mongoose.Schema({
     default: "pending",
   },
   Application: Object,
+  resumeUrl: String,
 });
 module.exports = mongoose.model("Application", Applicationipschema);

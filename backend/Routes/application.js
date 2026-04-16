@@ -50,6 +50,11 @@ router.post("/", async (req, res) => {
       Application: req.body.Application,
       body: req.body.body,
     });
+
+    // Auto-attach resume if user has one
+    if (dbUser && dbUser.resumeUrl) {
+      applicationipdata.resumeUrl = dbUser.resumeUrl;
+    }
     
     const data = await applicationipdata.save();
     res.send(data);
