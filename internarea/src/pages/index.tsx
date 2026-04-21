@@ -13,17 +13,19 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 export default function SvgSlider() {
+  const { t } = useTranslation();
   const categories = [
-    "Big Brands",
-    "Work From Home",
-    "Part-time",
-    "MBA",
-    "Engineering",
-    "Media",
-    "Design",
-    "Data Science",
+    t("home.categories.bigBrands"),
+    t("home.categories.workFromHome"),
+    t("home.categories.partTime"),
+    t("home.categories.mba"),
+    t("home.categories.engineering"),
+    t("home.categories.media"),
+    t("home.categories.design"),
+    t("home.categories.dataScience"),
   ];
   // const internships = [
   //   {
@@ -87,31 +89,31 @@ export default function SvgSlider() {
   const slides = [
     {
       pattern: "pattern-1",
-      title: "Start Your Career Journey",
+      title: t("home.slides.slide1"),
       bgColor: "bg-indigo-600",
     },
     {
       pattern: "pattern-2",
-      title: "Learn From The Best",
+      title: t("home.slides.slide2"),
       bgColor: "bg-blue-600",
     },
     {
       pattern: "pattern-3",
-      title: "Grow Your Skills",
+      title: t("home.slides.slide3"),
       bgColor: "bg-purple-600",
     },
     {
       pattern: "pattern-4",
-      title: "Connect With Top Companies",
+      title: t("home.slides.slide4"),
       bgColor: "bg-teal-600",
     },
   ];
 
   const stats = [
-    { number: "300K+", label: "companies hiring" },
-    { number: "10K+", label: "new openings everyday" },
-    { number: "21Mn+", label: "active students" },
-    { number: "600K+", label: "learners" },
+    { number: "300K+", label: t("home.stats.companiesHiring") },
+    { number: "10K+", label: t("home.stats.newOpenings") },
+    { number: "21Mn+", label: t("home.stats.activeStudents") },
+    { number: "600K+", label: t("home.stats.learners") },
   ];
   const [internships, setinternship] = useState<any>([]);
   const [jobs, setjob] = useState<any>([]);
@@ -149,9 +151,9 @@ export default function SvgSlider() {
       {/* hero section */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Make your dream career a reality
+          {t("home.heroTitle")}
         </h1>
-        <p className="text-xl text-gray-600">Trending on InternArea 🔥</p>
+        <p className="text-xl text-gray-600">{t("home.heroSubtitle")}</p>
       </div>
       {/* Swiper section */}
       <div className="mb-16">
@@ -251,7 +253,7 @@ export default function SvgSlider() {
       {/* Category section */}
       <div className="mb-12">
         <div className="flex flex-wrap gap-4">
-          <span className="text-gray-700 font-medium">POPULAR CATEGORIES:</span>
+          <span className="text-gray-700 font-medium">{t("home.popularCategories")}</span>
           {categories.map((category) => (
             <button
               key={category}
@@ -267,7 +269,7 @@ export default function SvgSlider() {
           ))}
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Latest internships on Intern Area
+          {t("home.latestInternships")}
         </h2>
       </div>
       {/* INternship grid   */}
@@ -279,7 +281,7 @@ export default function SvgSlider() {
           >
             <div className="flex items-center gap-2 text-blue-600 mb-4">
               <ArrowUpRight size={20} />
-              <span className="font-medium">Actively Hiring</span>
+              <span className="font-medium">{t("home.activelyHiring")}</span>
             </div>
             <h3 className="text-lg font-semibold mb-2 text-gray-800">
               {internship.title}
@@ -301,13 +303,13 @@ export default function SvgSlider() {
             </div>
             <div className="flex items-center justify-between mt-6">
               <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
-                Internship
+                {t("home.internship")}
               </span>
               <Link
                 href={`/detailiternship/${internship._id}`}
                 className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
               >
-                View details
+                {t("home.viewDetails")}
                 <ChevronRight size={16} />
               </Link>
             </div>
@@ -316,7 +318,7 @@ export default function SvgSlider() {
       </div>
       {/* Jobs grid   */}
       <div className="mb-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Latest Jobs</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">{t("home.latestJobs")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {filteredJobs.map((job: any, index: any) => (
             <div
@@ -325,7 +327,7 @@ export default function SvgSlider() {
             >
               <div className="flex items-center gap-2 text-blue-600 mb-4">
                 <ArrowUpRight size={20} />
-                <span className="font-medium">Actively Hiring</span>
+                <span className="font-medium">{t("home.activelyHiring")}</span>
               </div>
               <h3 className="text-lg font-semibold mb-2 text-gray-800">
                 {job.title}
@@ -347,13 +349,13 @@ export default function SvgSlider() {
               </div>
               <div className="flex items-center justify-between mt-6">
                 <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
-                  Jobs
+                  {t("home.jobs")}
                 </span>
                 <Link
                   href={`/detailInternship?q=${job._id}`}
                   className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
                 >
-                  View details
+                  {t("home.viewDetails")}
                   <ChevronRight size={16} />
                 </Link>
               </div>

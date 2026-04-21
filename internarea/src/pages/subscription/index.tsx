@@ -5,6 +5,7 @@ import { selectuser } from "@/Feature/Userslice";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Check, Crown, Shield, Star, Zap } from "lucide-react";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 // Function to inject Razorpay script dynamically
 const loadScript = (src: string) => {
@@ -88,6 +89,7 @@ export default function Subscription() {
   const user = useSelector(selectuser);
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState("Free");
+  const { t } = useTranslation();
 
   // Fetch the user's current plan
   useEffect(() => {
@@ -183,14 +185,14 @@ export default function Subscription() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-              Choose the right plan for you
+              {t("subscription.title")}
             </h2>
             <p className="max-w-2xl mt-4 mx-auto text-xl text-gray-500">
-              Upgrade your account to unlock more internship and job application opportunities and supercharge your career.
+              {t("subscription.subtitle")}
             </p>
             {user && (
               <div className="mt-4 inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
-                <span>Your current plan:&nbsp;</span>
+                <span>{t("subscription.currentPlan")}:&nbsp;</span>
                 <span className="font-bold">{currentPlan}</span>
               </div>
             )}

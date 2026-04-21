@@ -11,6 +11,8 @@ import { login, logout } from "@/Feature/Userslice";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from "axios";
+import { LanguageProvider, useTranslation } from "@/i18n/LanguageContext";
+import FrenchOTPModal from "@/Components/FrenchOTPModal";
 
 function AuthListener() {
   const dispatch = useDispatch();
@@ -74,14 +76,28 @@ function AuthListener() {
   return null;
 }
 
+function FrenchModalWrapper() {
+  const { showFrenchModal, setShowFrenchModal, requestFrench } = useTranslation();
+  if (!showFrenchModal) return null;
+  return (
+    <FrenchOTPModal
+      onVerified={requestFrench}
+      onCancel={() => setShowFrenchModal(false)}
+    />
+  );
+}
+
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <Provider store={store}>
-      <AuthListener />
-      <ToastContainer />
-      <Navbar />
-      <Component {...pageProps} />
-      <Fotter />
+      <LanguageProvider>
+        <AuthListener />
+        <ToastContainer />
+        <FrenchModalWrapper />
+        <Navbar />
+        <Component {...pageProps} />
+        <Fotter />
+      </LanguageProvider>
     </Provider>
   );
 }

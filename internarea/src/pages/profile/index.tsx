@@ -4,6 +4,7 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 interface UserType {
   name: string;
@@ -59,6 +60,7 @@ const planStyles: Record<string, { bg: string; text: string; border: string; ico
 
 const index = () => {
   const user = useSelector(selectuser);
+  const { t } = useTranslation();
   const [subInfo, setSubInfo] = useState<SubscriptionInfo | null>(null);
   const [subLoading, setSubLoading] = useState(true);
   const [resumeInfo, setResumeInfo] = useState<ResumeInfo | null>(null);
@@ -154,12 +156,12 @@ const index = () => {
                       {style.icon}
                     </div>
                     <div>
-                      <h3 className="text-white font-bold text-lg">{plan} Plan</h3>
-                      <p className="text-white/80 text-sm">Current Subscription</p>
+                      <h3 className="text-white font-bold text-lg">{plan} {t("profile.plan")}</h3>
+                      <p className="text-white/80 text-sm">{t("profile.currentSubscription")}</p>
                     </div>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white`}>
-                    {plan === "Free" ? "FREE" : "ACTIVE"}
+                    {plan === "Free" ? t("profile.free") : t("profile.active")}
                   </span>
                 </div>
 
@@ -167,14 +169,14 @@ const index = () => {
                   {subLoading ? (
                     <div className="flex items-center justify-center py-4">
                       <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
-                      <span className="ml-3 text-gray-500 text-sm">Loading subscription info...</span>
+                      <span className="ml-3 text-gray-500 text-sm">{t("common.loading")}</span>
                     </div>
                   ) : subInfo ? (
                     <div className="space-y-4">
                       {/* Usage Bar */}
                       <div>
                         <div className="flex justify-between text-sm mb-2">
-                          <span className="text-gray-600 font-medium">Applications Used This Month</span>
+                          <span className="text-gray-600 font-medium">{t("profile.applicationsUsed")}</span>
                           <span className="font-bold text-gray-900">
                             {subInfo.applicationsUsedThisMonth} / {subInfo.maxApplications === Infinity ? "∞" : subInfo.maxApplications}
                           </span>
@@ -198,7 +200,7 @@ const index = () => {
                       {/* Expiry Date */}
                       {subInfo.planExpiryDate && plan !== "Free" && (
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Plan Expires</span>
+                          <span className="text-gray-600">{t("profile.planExpires")}</span>
                           <span className="font-medium text-gray-900">
                             {new Date(subInfo.planExpiryDate).toLocaleDateString("en-IN", {
                               day: "numeric",
@@ -221,18 +223,18 @@ const index = () => {
                         {plan === "Free" ? (
                           <>
                             <Crown className="h-4 w-4 mr-2" />
-                            Upgrade Your Plan
+                            {t("profile.upgradePlan")}
                           </>
                         ) : (
                           <>
-                            Manage Subscription
+                            {t("profile.manageSubscription")}
                             <ExternalLink className="ml-2 h-4 w-4" />
                           </>
                         )}
                       </Link>
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-center py-2 text-sm">Could not load subscription info</p>
+                    <p className="text-gray-500 text-center py-2 text-sm">{t("profile.couldNotLoadSubscription")}</p>
                   )}
                 </div>
               </div>
@@ -245,13 +247,13 @@ const index = () => {
                       <FileText className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-white font-bold text-lg">Professional Resume</h3>
-                      <p className="text-white/80 text-sm">Auto-attached to applications</p>
+                      <h3 className="text-white font-bold text-lg">{t("profile.professionalResume")}</h3>
+                      <p className="text-white/80 text-sm">{t("profile.autoAttached")}</p>
                     </div>
                   </div>
                   {resumeInfo?.hasResume && (
                     <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white">
-                      ✅ READY
+                      ✅ {t("profile.resumeReady").toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -260,7 +262,7 @@ const index = () => {
                   {resumeLoading ? (
                     <div className="flex items-center justify-center py-4">
                       <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-purple-500"></div>
-                      <span className="ml-3 text-gray-500 text-sm">Loading resume info...</span>
+                      <span className="ml-3 text-gray-500 text-sm">{t("profile.loadingResume")}</span>
                     </div>
                   ) : resumeInfo?.hasResume && resumeInfo.resumeUrl ? (
                     <div className="space-y-4">
@@ -268,8 +270,8 @@ const index = () => {
                         <div className="flex items-center space-x-3">
                           <FileText className="h-5 w-5 text-green-600" />
                           <div>
-                            <p className="font-medium text-green-800">Resume Attached ✅</p>
-                            <p className="text-green-600 text-sm">Your resume is ready and attached to your profile</p>
+                            <p className="font-medium text-green-800">{t("profile.resumeAttached")}</p>
+                            <p className="text-green-600 text-sm">{t("profile.autoAttached")}</p>
                           </div>
                         </div>
                       </div>
@@ -281,13 +283,13 @@ const index = () => {
                           className="flex-1 inline-flex items-center justify-center px-4 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
                         >
                           <Download className="h-4 w-4 mr-2" />
-                          Download Resume
+                          {t("profile.downloadResume")}
                         </a>
                         <Link
                           href="/resume-builder"
                           className="flex-1 inline-flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
                         >
-                          Create New (₹50)
+                          {t("profile.createNewResume")}
                         </Link>
                       </div>
                     </div>
@@ -297,9 +299,9 @@ const index = () => {
                         <FileText className="h-7 w-7" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">No Resume Yet</p>
+                        <p className="font-medium text-gray-900">{t("profile.noResumeYet")}</p>
                         <p className="text-gray-500 text-sm mt-1">
-                          Create a professional resume and it will be auto-attached to your applications.
+                          {t("profile.noResumeDesc")}
                         </p>
                       </div>
                       <Link
@@ -307,7 +309,7 @@ const index = () => {
                         className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-blue-700 shadow-md hover:shadow-lg transition-all duration-200"
                       >
                         <FileText className="h-4 w-4 mr-2" />
-                        Create Your Resume — ₹50
+                        {t("profile.createYourResume")}
                       </Link>
                     </div>
                   )}
@@ -321,7 +323,7 @@ const index = () => {
                     {subInfo?.applicationsUsedThisMonth ?? 0}
                   </span>
                   <p className="text-blue-600 text-sm mt-1">
-                    Active Applications
+                    {t("profile.activeApplications")}
                   </p>
                 </div>
                 <div className="bg-green-50 rounded-lg p-4 text-center">
@@ -329,7 +331,7 @@ const index = () => {
                     0
                   </span>
                   <p className="text-green-600 text-sm mt-1">
-                    Accepted Applications
+                    {t("profile.acceptedApplications")}
                   </p>
                 </div>
               </div>
@@ -340,7 +342,7 @@ const index = () => {
                   href="/userapplication"
                   className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
                 >
-                  View Applications
+                  {t("profile.viewApplications")}
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </Link>
               </div>

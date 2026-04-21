@@ -29,6 +29,7 @@ import {
   User,
 } from "lucide-react";
 import { useRouter } from "next/router";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 const API_BASE = "https://internarea-1-n2uz.onrender.com/api/resume";
 
@@ -80,6 +81,7 @@ interface ResumeFormData {
 export default function ResumeBuilder() {
   const user = useSelector(selectuser);
   const router = useRouter();
+  const { t } = useTranslation();
 
   // Step management
   const [currentStep, setCurrentStep] = useState(1);
@@ -409,10 +411,10 @@ export default function ResumeBuilder() {
   // RENDER STEPS
   // ========================
   const steps = [
-    { number: 1, label: "Resume Form", icon: <FileText className="h-4 w-4" /> },
-    { number: 2, label: "Verify Email", icon: <Shield className="h-4 w-4" /> },
-    { number: 3, label: "Payment", icon: <CreditCard className="h-4 w-4" /> },
-    { number: 4, label: "Success", icon: <CheckCircle className="h-4 w-4" /> },
+    { number: 1, label: t("resume.steps.resumeForm"), icon: <FileText className="h-4 w-4" /> },
+    { number: 2, label: t("resume.steps.verifyEmail"), icon: <Shield className="h-4 w-4" /> },
+    { number: 3, label: t("resume.steps.payment"), icon: <CreditCard className="h-4 w-4" /> },
+    { number: 4, label: t("resume.steps.success"), icon: <CheckCircle className="h-4 w-4" /> },
   ];
 
   return (
@@ -433,15 +435,14 @@ export default function ResumeBuilder() {
               <FileText className="h-8 w-8" />
             </div>
             <h1 className="text-3xl font-extrabold text-gray-900">
-              Professional Resume Builder
+              {t("resume.title")}
             </h1>
             <p className="mt-2 text-gray-500 max-w-xl mx-auto">
-              Create a stunning, professional resume in minutes. Your resume
-              will be automatically attached to all future applications.
+              {t("resume.subtitle")}
             </p>
             <div className="mt-3 inline-flex items-center px-4 py-2 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
               <Sparkles className="h-4 w-4 mr-2" />
-              Premium Feature — ₹50 per resume
+              {t("resume.premiumBadge")}
             </div>
           </div>
 
@@ -488,7 +489,7 @@ export default function ResumeBuilder() {
                       <User className="h-5 w-5" />
                     </div>
                     <h2 className="text-xl font-bold text-gray-900">
-                      Personal Information
+                      {t("resume.personalInfo")}
                     </h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -550,7 +551,7 @@ export default function ResumeBuilder() {
                       <FileText className="h-5 w-5" />
                     </div>
                     <h2 className="text-xl font-bold text-gray-900">
-                      Professional Summary <span className="text-red-500">*</span>
+                      {t("resume.professionalSummary")} <span className="text-red-500">*</span>
                     </h2>
                   </div>
                   <textarea
@@ -570,7 +571,7 @@ export default function ResumeBuilder() {
                         <GraduationCap className="h-5 w-5" />
                       </div>
                       <h2 className="text-xl font-bold text-gray-900">
-                        Education
+                        {t("resume.education")}
                       </h2>
                     </div>
                     <button
@@ -642,7 +643,7 @@ export default function ResumeBuilder() {
                         <Briefcase className="h-5 w-5" />
                       </div>
                       <h2 className="text-xl font-bold text-gray-900">
-                        Experience
+                        {t("resume.experience")}
                       </h2>
                     </div>
                     <button
@@ -712,7 +713,7 @@ export default function ResumeBuilder() {
                     <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-100 text-cyan-600">
                       <Code className="h-5 w-5" />
                     </div>
-                    <h2 className="text-xl font-bold text-gray-900">Skills</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{t("resume.skills")}</h2>
                   </div>
                   <div className="flex items-center gap-2 mb-3">
                     <input
@@ -762,7 +763,7 @@ export default function ResumeBuilder() {
                         <FolderOpen className="h-5 w-5" />
                       </div>
                       <h2 className="text-xl font-bold text-gray-900">
-                        Projects
+                        {t("resume.projects")}
                       </h2>
                     </div>
                     <button
@@ -824,7 +825,7 @@ export default function ResumeBuilder() {
                       <Award className="h-5 w-5" />
                     </div>
                     <h2 className="text-xl font-bold text-gray-900">
-                      Certifications
+                      {t("resume.certifications")}
                     </h2>
                   </div>
                   <div className="flex items-center gap-2 mb-3">
@@ -873,7 +874,7 @@ export default function ResumeBuilder() {
                     onClick={goNext}
                     className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-purple-200 transition-all duration-200 transform hover:-translate-y-0.5"
                   >
-                    Continue to Verification
+                    {t("resume.continueToVerification")}
                     <ChevronRight className="h-5 w-5 ml-2" />
                   </button>
                 </div>
@@ -888,7 +889,7 @@ export default function ResumeBuilder() {
                     <Mail className="h-10 w-10" />
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    Email Verification
+                    {t("resume.verifyYourEmail")}
                   </h2>
                   <p className="text-gray-500 mb-8">
                     We'll send a 6-digit OTP to{" "}
@@ -910,7 +911,7 @@ export default function ResumeBuilder() {
                       ) : (
                         <span className="inline-flex items-center">
                           <Mail className="h-5 w-5 mr-2" />
-                          Send OTP
+                          {t("resume.sendOTP")}
                         </span>
                       )}
                     </button>
@@ -928,7 +929,7 @@ export default function ResumeBuilder() {
                           )
                         }
                         maxLength={6}
-                        placeholder="Enter 6-digit OTP"
+                        placeholder={t("resume.enterOTP")}
                         className="w-full text-center text-2xl tracking-[0.5em] px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-mono"
                       />
                       <button
@@ -944,7 +945,7 @@ export default function ResumeBuilder() {
                         ) : (
                           <span className="inline-flex items-center">
                             <Lock className="h-5 w-5 mr-2" />
-                            Verify OTP
+                            {t("resume.verifyOTP")}
                           </span>
                         )}
                       </button>
@@ -974,7 +975,7 @@ export default function ResumeBuilder() {
                         className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-purple-200 transition-all duration-200"
                       >
                         <span className="inline-flex items-center">
-                          Proceed to Payment
+                          {t("resume.proceedToPayment")}
                           <ChevronRight className="h-5 w-5 ml-2" />
                         </span>
                       </button>
@@ -1062,7 +1063,7 @@ export default function ResumeBuilder() {
                     ) : (
                       <span className="inline-flex items-center">
                         <Lock className="h-5 w-5 mr-2" />
-                        Pay ₹50 — Generate Resume
+                        {t("resume.payAndGenerate")}
                       </span>
                     )}
                   </button>
@@ -1100,11 +1101,10 @@ export default function ResumeBuilder() {
                   </div>
 
                   <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
-                    🎉 Resume Generated!
+                    {t("resume.successTitle")}
                   </h2>
                   <p className="text-gray-500 mb-8">
-                    Your professional resume has been created and attached to
-                    your InternArea profile.
+                    {t("resume.successDesc")}
                   </p>
 
                   <div className="space-y-4">
@@ -1116,7 +1116,7 @@ export default function ResumeBuilder() {
                         className="w-full inline-flex items-center justify-center py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-purple-200 transition-all duration-200 transform hover:-translate-y-0.5"
                       >
                         <Download className="h-5 w-5 mr-2" />
-                        Download Resume PDF
+                        {t("resume.downloadResume")}
                       </a>
                     )}
 
@@ -1134,7 +1134,7 @@ export default function ResumeBuilder() {
                       onClick={() => router.push("/profile")}
                       className="w-full py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
                     >
-                      Go to Profile
+                      {t("resume.goToProfile")}
                     </button>
                   </div>
                 </div>
