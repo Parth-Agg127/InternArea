@@ -1,11 +1,27 @@
 const express = require("express");
 const router = express.Router();
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 const User = require("../Model/User");
 const Post = require("../Model/Post");
+const OTP = require("../Model/OTP");
+const LoginHistory = require("../Model/LoginHistory");
+const { parseDevice, isWithinMobileWindow, getClientIP } = require("../utils/deviceParser");
 
-// POST /api/user/sync — Create or update user from Firebase data
+// Email transporter
+function getTransporter() {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+}
+
+// POST /api/user/sync — Create or update user from Firebase data (with device tracking + security rules)
 router.post("/sync", async (req, res) => {
-  const { firebaseUid, name, email, photo, phoneNumber } = req.body;
+  const { firebaseUid, name, email, photo, phoneNumber, deviceInfo } = req.body;
 
   if (!firebaseUid || !email) {
     return res.status(400).json({ error: "firebaseUid and email are required" });
@@ -31,6 +47,112 @@ router.post("/sync", async (req, res) => {
         phoneNumber: phoneNumber || "",
       });
       await user.save();
+    }
+
+    // --- Device Parsing ---
+    const ua = deviceInfo?.userAgent || "";
+    const screenWidth = deviceInfo?.screenWidth || 0;
+    const { browser, browserVersion, os, deviceType } = parseDevice(ua, screenWidth);
+    const ipAddress = getClientIP(req);
+
+    // Only apply security rules if deviceInfo was provided (skip for initial page-load syncs without device info)
+    if (deviceInfo) {
+      // --- Mobile Time Restriction ---
+      if (deviceType === "mobile") {
+        if (!isWithinMobileWindow()) {
+          // Save blocked login record
+          await new LoginHistory({
+            user: user._id,
+            email: user.email,
+            browser,
+            browserVersion,
+            os,
+            deviceType,
+            ipAddress,
+            loginMethod: "google",
+            status: "blocked_time",
+            blockedReason: "Mobile login is only allowed between 10:00 AM and 1:00 PM IST",
+          }).save();
+
+          return res.status(403).json({
+            error: "Mobile login is only allowed between 10:00 AM and 1:00 PM IST",
+            blockedReason: "mobile_time_restriction",
+          });
+        }
+      }
+
+      // --- Chrome OTP Requirement ---
+      if (browser === "Chrome") {
+        // Delete any existing login OTPs for this email
+        await OTP.deleteMany({ email: user.email, purpose: "chrome_login" });
+
+        // Generate 6-digit OTP
+        const otpPlain = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpHash = crypto.createHash("sha256").update(otpPlain).digest("hex");
+
+        // Store OTP with 5 minute expiry
+        await new OTP({
+          email: user.email,
+          otp: otpHash,
+          purpose: "chrome_login",
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        }).save();
+
+        // Save pending login record
+        const loginRecord = await new LoginHistory({
+          user: user._id,
+          email: user.email,
+          browser,
+          browserVersion,
+          os,
+          deviceType,
+          ipAddress,
+          loginMethod: "google",
+          status: "pending_otp",
+          chromeOtpRequired: true,
+        }).save();
+
+        // Send OTP email
+        const transporter = getTransporter();
+        await transporter.sendMail({
+          from: `"InternArea Security" <${process.env.EMAIL_USER}>`,
+          to: user.email,
+          subject: "Chrome Login Verification OTP - InternArea",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px;">
+              <h2 style="color: #2563eb;">🔐 Chrome Login Verification</h2>
+              <p>A Google sign-in attempt was detected from <strong>Google Chrome</strong> on <strong>${os}</strong>.</p>
+              <p>Your one-time verification code is:</p>
+              <div style="background: #f0f9ff; border: 2px solid #2563eb; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e40af;">${otpPlain}</span>
+              </div>
+              <p style="color: #666;">This code expires in <strong>5 minutes</strong>.</p>
+              <p style="color: #999; font-size: 12px;">If you didn't attempt to log in, please ignore this email and secure your account.</p>
+            </div>
+          `,
+        });
+
+        return res.status(200).json({
+          requiresOTP: true,
+          loginId: loginRecord._id,
+          email: user.email,
+          user: user,
+          message: "OTP sent to your email for Chrome verification.",
+        });
+      }
+
+      // --- Normal Login (non-Chrome, allowed time) — save success record ---
+      await new LoginHistory({
+        user: user._id,
+        email: user.email,
+        browser,
+        browserVersion,
+        os,
+        deviceType,
+        ipAddress,
+        loginMethod: "google",
+        status: "success",
+      }).save();
     }
 
     res.status(200).json(user);
@@ -162,6 +284,27 @@ router.get("/:firebaseUid/subscription", async (req, res) => {
   } catch (error) {
     console.error("Get subscription info error:", error);
     res.status(500).json({ error: "Failed to get subscription info" });
+  }
+});
+
+// GET /api/user/:firebaseUid/login-history — Get user's login history
+router.get("/:firebaseUid/login-history", async (req, res) => {
+  try {
+    const user = await User.findOne({ firebaseUid: req.params.firebaseUid });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const loginHistory = await LoginHistory.find({ user: user._id })
+      .sort({ timestamp: -1 })
+      .limit(20)
+      .select("-__v");
+
+    res.status(200).json(loginHistory);
+  } catch (error) {
+    console.error("Get login history error:", error);
+    res.status(500).json({ error: "Failed to get login history" });
   }
 });
 

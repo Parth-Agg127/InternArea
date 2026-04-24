@@ -35,13 +35,14 @@ function getTransporter() {
 // ==============================
 router.post("/send-otp", async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, purpose } = req.body;
+    const otpPurpose = purpose || "resume_payment";
     if (!email) {
       return res.status(400).json({ error: "Email is required." });
     }
 
     // Delete any existing OTPs for this email + purpose
-    await OTP.deleteMany({ email, purpose: "resume_payment" });
+    await OTP.deleteMany({ email, purpose: otpPurpose });
 
     // Generate 6-digit OTP
     const otpPlain = Math.floor(100000 + Math.random() * 900000).toString();
@@ -53,20 +54,26 @@ router.post("/send-otp", async (req, res) => {
     const otpDoc = new OTP({
       email,
       otp: otpHash,
-      purpose: "resume_payment",
+      purpose: otpPurpose,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
     });
     await otpDoc.save();
 
     // Send email
     const transporter = getTransporter();
+    const emailSubject = otpPurpose === "french_language"
+      ? "Language Verification OTP - InternArea"
+      : "Your Resume Builder OTP - InternArea";
+    const emailTitle = otpPurpose === "french_language"
+      ? "French Language Verification"
+      : "Resume Builder - OTP Verification";
     await transporter.sendMail({
-      from: `"InternArea Resume Builder" <${process.env.EMAIL_USER}>`,
+      from: `"InternArea" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "Your Resume Builder OTP - InternArea",
+      subject: emailSubject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px;">
-          <h2 style="color: #2563eb;">Resume Builder - OTP Verification</h2>
+          <h2 style="color: #2563eb;">${emailTitle}</h2>
           <p>Your one-time verification code is:</p>
           <div style="background: #f0f9ff; border: 2px solid #2563eb; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
             <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e40af;">${otpPlain}</span>
@@ -89,7 +96,8 @@ router.post("/send-otp", async (req, res) => {
 // ==============================
 router.post("/verify-otp", async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    const { email, otp, purpose } = req.body;
+    const otpPurpose = purpose || "resume_payment";
     if (!email || !otp) {
       return res.status(400).json({ error: "Email and OTP are required." });
     }
@@ -97,7 +105,7 @@ router.post("/verify-otp", async (req, res) => {
     // Find the latest OTP for this email
     const otpDoc = await OTP.findOne({
       email,
-      purpose: "resume_payment",
+      purpose: otpPurpose,
       verified: false,
     }).sort({ createdAt: -1 });
 
