@@ -49,6 +49,9 @@ function AuthListener() {
             })
           );
           // Sync Firebase user to MongoDB for friend/post system
+          // Note: Device tracking is handled in Navbar.tsx during the explicit login action.
+          // This onAuthStateChanged sync uses NO deviceInfo so the backend will skip security checks
+          // (preventing OTP loops on page reload).
           try {
             await axios.post(
               "https://internarea-1-n2uz.onrender.com/api/user/sync",
@@ -101,4 +104,3 @@ export default function App({ Component, pageProps }: AppProps) {
     </Provider>
   );
 }
-

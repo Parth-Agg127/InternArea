@@ -1,10 +1,12 @@
 import { selectuser } from "@/Feature/Userslice";
-import { Crown, Download, ExternalLink, FileText, Mail, Shield, Star, User, Zap } from "lucide-react";
+import { Crown, Download, ExternalLink, FileText, Mail, Shield, Star, User, Zap, Monitor, Smartphone, Tablet, Clock, MapPin, Globe } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { useTranslation } from "@/i18n/LanguageContext";
+
+const API_URL = "https://internarea-1-n2uz.onrender.com/api";
 
 interface UserType {
   name: string;
@@ -25,6 +27,20 @@ interface SubscriptionInfo {
 interface ResumeInfo {
   hasResume: boolean;
   resumeUrl: string;
+}
+
+interface LoginRecord {
+  _id: string;
+  browser: string;
+  browserVersion: string;
+  os: string;
+  deviceType: string;
+  ipAddress: string;
+  loginMethod: string;
+  status: string;
+  chromeOtpRequired: boolean;
+  blockedReason: string;
+  timestamp: string;
 }
 
 const planStyles: Record<string, { bg: string; text: string; border: string; icon: React.ReactNode; gradient: string }> = {
@@ -58,6 +74,67 @@ const planStyles: Record<string, { bg: string; text: string; border: string; ico
   },
 };
 
+/** Get browser icon/emoji */
+function getBrowserIcon(browser: string) {
+  switch (browser.toLowerCase()) {
+    case "chrome": return "🌐";
+    case "firefox": return "🦊";
+    case "safari": return "🧭";
+    case "edge": return "🔷";
+    case "opera": return "🔴";
+    default: return "🌍";
+  }
+}
+
+/** Get status badge */
+function getStatusBadge(status: string) {
+  switch (status) {
+    case "success":
+      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">✅ Success</span>;
+    case "pending_otp":
+      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">⏳ Pending OTP</span>;
+    case "failed":
+      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">❌ Failed</span>;
+    case "blocked_time":
+      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">🚫 Blocked</span>;
+    default:
+      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">{status}</span>;
+  }
+}
+
+/** Get device icon */
+function getDeviceIcon(deviceType: string) {
+  switch (deviceType) {
+    case "mobile": return <Smartphone className="h-4 w-4 text-purple-500" />;
+    case "tablet": return <Tablet className="h-4 w-4 text-indigo-500" />;
+    default: return <Monitor className="h-4 w-4 text-blue-500" />;
+  }
+}
+
+/** Mask IP address for privacy */
+function maskIP(ip: string) {
+  if (!ip || ip === "unknown") return "—";
+  const parts = ip.split(".");
+  if (parts.length === 4) {
+    return `${parts[0]}.${parts[1]}.*.*`;
+  }
+  // IPv6 or other — show first portion
+  return ip.length > 12 ? ip.substring(0, 12) + "…" : ip;
+}
+
+/** Format timestamp */
+function formatTimestamp(ts: string) {
+  const date = new Date(ts);
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 const index = () => {
   const user = useSelector(selectuser);
   const { t } = useTranslation();
@@ -65,6 +142,9 @@ const index = () => {
   const [subLoading, setSubLoading] = useState(true);
   const [resumeInfo, setResumeInfo] = useState<ResumeInfo | null>(null);
   const [resumeLoading, setResumeLoading] = useState(true);
+  const [loginHistory, setLoginHistory] = useState<LoginRecord[]>([]);
+  const [loginLoading, setLoginLoading] = useState(true);
+  const [showAllLogins, setShowAllLogins] = useState(false);
 
   useEffect(() => {
     const fetchSubscription = async () => {
@@ -74,7 +154,7 @@ const index = () => {
 
       try {
         const res = await axios.get(
-          `https://internarea-1-n2uz.onrender.com/api/user/${uid}/subscription`
+          `${API_URL}/user/${uid}/subscription`
         );
         setSubInfo(res.data);
       } catch (err: any) {
@@ -95,7 +175,7 @@ const index = () => {
 
       try {
         const res = await axios.get(
-          `https://internarea-1-n2uz.onrender.com/api/resume/${uid}`
+          `${API_URL}/resume/${uid}`
         );
         setResumeInfo(res.data);
       } catch (err: any) {
@@ -112,8 +192,32 @@ const index = () => {
     fetchResume();
   }, [user]);
 
+  // Fetch login history
+  useEffect(() => {
+    const fetchLoginHistory = async () => {
+      if (!user) return;
+      const uid = user.uid || user.firebaseUid || user._id;
+      if (!uid) return;
+
+      try {
+        const res = await axios.get(
+          `${API_URL}/user/${uid}/login-history`
+        );
+        setLoginHistory(res.data);
+      } catch (err: any) {
+        console.warn("Login history fetch failed (non-fatal):", err.response?.status || err.message);
+      } finally {
+        setLoginLoading(false);
+      }
+    };
+    fetchLoginHistory();
+  }, [user]);
+
   const plan = subInfo?.currentPlan || "Free";
   const style = planStyles[plan] || planStyles.Free;
+
+  // Show 5 login records by default, all if expanded
+  const displayedLogins = showAllLogins ? loginHistory : loginHistory.slice(0, 5);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -311,6 +415,133 @@ const index = () => {
                         <FileText className="h-4 w-4 mr-2" />
                         {t("profile.createYourResume")}
                       </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ====== LOGIN HISTORY CARD ====== */}
+              <div className="rounded-xl border-2 border-slate-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-slate-700 to-slate-900 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-white/20 rounded-lg p-2">
+                      <Shield className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-lg">Login History</h3>
+                      <p className="text-white/70 text-sm">Security & Access Activity</p>
+                    </div>
+                  </div>
+                  {loginHistory.length > 0 && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white">
+                      {loginHistory.length} Records
+                    </span>
+                  )}
+                </div>
+
+                <div className="px-6 py-5 bg-white">
+                  {loginLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-slate-500"></div>
+                      <span className="ml-3 text-gray-500 text-sm">Loading login history...</span>
+                    </div>
+                  ) : loginHistory.length === 0 ? (
+                    <div className="text-center py-6">
+                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-slate-100 text-slate-400 mb-3">
+                        <Clock className="h-7 w-7" />
+                      </div>
+                      <p className="font-medium text-gray-900">No login history yet</p>
+                      <p className="text-gray-500 text-sm mt-1">
+                        Your login activity will appear here after your next login.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {displayedLogins.map((record) => (
+                        <div
+                          key={record._id}
+                          className={`rounded-lg border p-4 transition-all hover:shadow-sm ${
+                            record.status === "success"
+                              ? "border-green-200 bg-green-50/50"
+                              : record.status === "pending_otp"
+                              ? "border-yellow-200 bg-yellow-50/50"
+                              : "border-red-200 bg-red-50/50"
+                          }`}
+                        >
+                          {/* Top row: date + status */}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>{formatTimestamp(record.timestamp)}</span>
+                            </div>
+                            {getStatusBadge(record.status)}
+                          </div>
+
+                          {/* Details row */}
+                          <div className="flex flex-wrap items-center gap-3 text-sm">
+                            {/* Browser */}
+                            <div className="flex items-center gap-1.5">
+                              <span>{getBrowserIcon(record.browser)}</span>
+                              <span className="text-gray-700 font-medium">{record.browser}</span>
+                              {record.chromeOtpRequired && (
+                                <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">OTP</span>
+                              )}
+                            </div>
+
+                            <span className="text-gray-300">·</span>
+
+                            {/* OS */}
+                            <div className="flex items-center gap-1.5">
+                              <Globe className="h-3.5 w-3.5 text-gray-400" />
+                              <span className="text-gray-600">{record.os}</span>
+                            </div>
+
+                            <span className="text-gray-300">·</span>
+
+                            {/* Device */}
+                            <div className="flex items-center gap-1.5">
+                              {getDeviceIcon(record.deviceType)}
+                              <span className="text-gray-600 capitalize">{record.deviceType}</span>
+                            </div>
+
+                            <span className="text-gray-300">·</span>
+
+                            {/* IP */}
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                              <span className="text-gray-500 font-mono text-xs">{maskIP(record.ipAddress)}</span>
+                            </div>
+                          </div>
+
+                          {/* Login method badge */}
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              record.loginMethod === "google"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-indigo-100 text-indigo-700"
+                            }`}>
+                              {record.loginMethod === "google" ? "Google" : "Email"} Login
+                            </span>
+                            {record.blockedReason && (
+                              <span className="text-xs text-red-600 font-medium">
+                                {record.blockedReason}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Show more / Show less button */}
+                      {loginHistory.length > 5 && (
+                        <button
+                          onClick={() => setShowAllLogins(!showAllLogins)}
+                          className="w-full py-2.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          {showAllLogins
+                            ? `Show Less`
+                            : `View All ${loginHistory.length} Login Records`}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
