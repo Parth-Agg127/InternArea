@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { ImagePlus, Video, X, Send, Loader2, Lock } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 interface PostLimit {
   canPost: boolean;
@@ -20,6 +21,7 @@ interface CreatePostProps {
 const API_URL = "https://internarea-1-n2uz.onrender.com/api";
 
 const CreatePost = ({ user, postLimit, onPostCreated }: CreatePostProps) => {
+  const { t } = useTranslation();
   const [content, setContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaPreviews, setMediaPreviews] = useState<
@@ -28,10 +30,24 @@ const CreatePost = ({ user, postLimit, onPostCreated }: CreatePostProps) => {
   const [isPosting, setIsPosting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Generate the post limit message on the frontend using translation keys
+  const getPostLimitMessage = () => {
+    if (!postLimit) return "";
+    if (postLimit.friendCount === 0) {
+      return t("publicSpace.postLimitAddFriends");
+    } else if (postLimit.remaining === -1) {
+      return t("publicSpace.postLimitUnlimited");
+    } else if (postLimit.remaining > 0) {
+      return t("publicSpace.postLimitRemaining").replace("{remaining}", String(postLimit.remaining));
+    } else {
+      return t("publicSpace.postLimitReached");
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (mediaFiles.length + files.length > 5) {
-      toast.error("Maximum 5 files allowed per post");
+      toast.error(t("publicSpace.maxFilesError"));
       return;
     }
 
@@ -54,7 +70,7 @@ const CreatePost = ({ user, postLimit, onPostCreated }: CreatePostProps) => {
 
   const handleSubmit = async () => {
     if (!content.trim() && mediaFiles.length === 0) {
-      toast.error("Add some text or media to your post");
+      toast.error(t("publicSpace.addTextOrMedia"));
       return;
     }
 
@@ -71,14 +87,14 @@ const CreatePost = ({ user, postLimit, onPostCreated }: CreatePostProps) => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      toast.success("Post created successfully! 🎉");
+      toast.success(t("publicSpace.postCreated"));
       setContent("");
       setMediaFiles([]);
       setMediaPreviews([]);
       onPostCreated();
     } catch (error: any) {
       const msg =
-        error?.response?.data?.error || "Failed to create post";
+        error?.response?.data?.error || t("publicSpace.postFailed");
       toast.error(msg);
     } finally {
       setIsPosting(false);
@@ -112,7 +128,7 @@ const CreatePost = ({ user, postLimit, onPostCreated }: CreatePostProps) => {
                 canPost ? "text-green-600" : "text-red-500"
               }`}
             >
-              {postLimit.message}
+              {getPostLimitMessage()}
             </p>
           )}
         </div>
@@ -124,8 +140,8 @@ const CreatePost = ({ user, postLimit, onPostCreated }: CreatePostProps) => {
         onChange={(e) => setContent(e.target.value)}
         placeholder={
           canPost
-            ? "What's on your mind? Share something with the community..."
-            : "Add friends to start posting!"
+            ? t("publicSpace.placeholder")
+            : t("publicSpace.placeholderLocked")
         }
         disabled={!canPost}
         className="w-full min-h-[100px] p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -181,7 +197,7 @@ const CreatePost = ({ user, postLimit, onPostCreated }: CreatePostProps) => {
             className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ImagePlus size={18} className="text-green-600" />
-            <span className="hidden sm:inline">Photo</span>
+            <span className="hidden sm:inline">{t("publicSpace.photo")}</span>
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -189,7 +205,7 @@ const CreatePost = ({ user, postLimit, onPostCreated }: CreatePostProps) => {
             className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Video size={18} className="text-blue-600" />
-            <span className="hidden sm:inline">Video</span>
+            <span className="hidden sm:inline">{t("publicSpace.video")}</span>
           </button>
         </div>
 
@@ -203,17 +219,17 @@ const CreatePost = ({ user, postLimit, onPostCreated }: CreatePostProps) => {
           {isPosting ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              Posting...
+              {t("publicSpace.posting")}
             </>
           ) : !canPost ? (
             <>
               <Lock size={16} />
-              Locked
+              {t("publicSpace.locked")}
             </>
           ) : (
             <>
               <Send size={16} />
-              Post
+              {t("publicSpace.post")}
             </>
           )}
         </button>

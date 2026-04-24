@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 const API_URL = "https://internarea-1-n2uz.onrender.com/api";
 
@@ -26,6 +27,7 @@ const PostCard = ({
   onPostUpdated,
   onPostDeleted,
 }: PostCardProps) => {
+  const { t } = useTranslation();
   const [commentText, setCommentText] = useState("");
   const [showComments, setShowComments] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
@@ -40,7 +42,7 @@ const PostCard = ({
 
   const handleLike = async () => {
     if (!currentUser) {
-      toast.error("Please login to like posts");
+      toast.error(t("publicSpace.loginToLike"));
       return;
     }
     setIsLiking(true);
@@ -50,7 +52,7 @@ const PostCard = ({
       });
       onPostUpdated(res.data);
     } catch (error) {
-      toast.error("Failed to like post");
+      toast.error(t("publicSpace.likeFailed"));
     } finally {
       setIsLiking(false);
     }
@@ -58,7 +60,7 @@ const PostCard = ({
 
   const handleComment = async () => {
     if (!currentUser) {
-      toast.error("Please login to comment");
+      toast.error(t("publicSpace.loginToComment"));
       return;
     }
     if (!commentText.trim()) return;
@@ -72,7 +74,7 @@ const PostCard = ({
       onPostUpdated(res.data);
       setCommentText("");
     } catch (error) {
-      toast.error("Failed to add comment");
+      toast.error(t("publicSpace.commentFailed"));
     } finally {
       setIsCommenting(false);
     }
@@ -83,28 +85,28 @@ const PostCard = ({
       // Copy link to clipboard
       const postUrl = `${window.location.origin}/publicspace?post=${post._id}`;
       await navigator.clipboard.writeText(postUrl);
-      toast.success("Link copied to clipboard!");
+      toast.success(t("publicSpace.linkCopied"));
 
       // Increment share count on backend
       const res = await axios.put(`${API_URL}/post/${post._id}/share`);
       onPostUpdated(res.data);
     } catch (error) {
-      toast.error("Failed to share post");
+      toast.error(t("publicSpace.shareFailed"));
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
+    if (!confirm(t("publicSpace.deleteConfirm"))) return;
 
     setIsDeleting(true);
     try {
       await axios.delete(`${API_URL}/post/${post._id}`, {
         data: { firebaseUid: currentUser.uid },
       });
-      toast.success("Post deleted");
+      toast.success(t("publicSpace.postDeleted"));
       onPostDeleted(post._id);
     } catch (error) {
-      toast.error("Failed to delete post");
+      toast.error(t("publicSpace.deleteFailed"));
     } finally {
       setIsDeleting(false);
     }
@@ -118,10 +120,10 @@ const PostCard = ({
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return t("publicSpace.justNow");
+    if (diffMins < 60) return `${diffMins}${t("publicSpace.minutesAgo")}`;
+    if (diffHours < 24) return `${diffHours}${t("publicSpace.hoursAgo")}`;
+    if (diffDays < 7) return `${diffDays}${t("publicSpace.daysAgo")}`;
     return date.toLocaleDateString();
   };
 
@@ -145,7 +147,7 @@ const PostCard = ({
           )}
           <div>
             <p className="font-medium text-gray-900 text-sm">
-              {post.author?.name || "Unknown User"}
+              {post.author?.name || t("publicSpace.unknownUser")}
             </p>
             <p className="text-xs text-gray-500">
               {formatTime(post.createdAt)}
@@ -158,7 +160,7 @@ const PostCard = ({
             onClick={handleDelete}
             disabled={isDeleting}
             className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-            title="Delete post"
+            title={t("publicSpace.deletePost")}
           >
             <Trash2 size={16} />
           </button>
@@ -207,13 +209,13 @@ const PostCard = ({
       <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-500 border-b border-gray-100">
         <span>
           {post.likes?.length || 0}{" "}
-          {post.likes?.length === 1 ? "like" : "likes"}
+          {post.likes?.length === 1 ? t("publicSpace.oneLike") : t("publicSpace.multipleLikes")}
         </span>
         <div className="flex gap-3">
           <span>
-            {post.comments?.length || 0} comments
+            {post.comments?.length || 0} {t("publicSpace.commentsLabel")}
           </span>
-          <span>{post.shares || 0} shares</span>
+          <span>{post.shares || 0} {t("publicSpace.sharesLabel")}</span>
         </div>
       </div>
 
@@ -232,14 +234,14 @@ const PostCard = ({
             size={18}
             className={isLiked ? "fill-red-500" : ""}
           />
-          Like
+          {t("publicSpace.like")}
         </button>
         <button
           onClick={() => setShowComments(!showComments)}
           className="flex items-center gap-2 py-2.5 px-4 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors text-sm font-medium"
         >
           <MessageCircle size={18} />
-          Comment
+          {t("publicSpace.comment")}
           {showComments ? (
             <ChevronUp size={14} />
           ) : (
@@ -251,7 +253,7 @@ const PostCard = ({
           className="flex items-center gap-2 py-2.5 px-4 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors text-sm font-medium"
         >
           <Share2 size={18} />
-          Share
+          {t("publicSpace.share")}
         </button>
       </div>
 
@@ -278,7 +280,7 @@ const PostCard = ({
                   )}
                   <div className="bg-gray-50 rounded-lg px-3 py-2 flex-1">
                     <p className="text-xs font-medium text-gray-900">
-                      {comment.author?.name || "Unknown"}
+                      {comment.author?.name || t("publicSpace.unknownUser")}
                     </p>
                     <p className="text-sm text-gray-700">{comment.text}</p>
                     <p className="text-[10px] text-gray-400 mt-1">
@@ -317,7 +319,7 @@ const PostCard = ({
                       handleComment();
                     }
                   }}
-                  placeholder="Write a comment..."
+                  placeholder={t("publicSpace.writeComment")}
                   className="flex-1 px-3 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                 />
                 <button

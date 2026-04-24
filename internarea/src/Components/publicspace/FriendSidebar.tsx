@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 const API_URL = "https://internarea-1-n2uz.onrender.com/api";
 
@@ -22,6 +23,7 @@ interface FriendSidebarProps {
 }
 
 const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) => {
+  const { t } = useTranslation();
   const [friends, setFriends] = useState<any[]>([]);
   const [friendRequests, setFriendRequests] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,7 +72,7 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
       );
       setSearchResults(filtered);
     } catch (error) {
-      toast.error("Search failed");
+      toast.error(t("publicSpace.searchFailed"));
     } finally {
       setIsSearching(false);
     }
@@ -84,15 +86,15 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
         toUid: targetUid,
       });
       if (res.data.autoAccepted) {
-        toast.success("You are now friends! 🎉");
+        toast.success(t("publicSpace.nowFriends"));
         fetchFriends();
         onFriendUpdate();
       } else {
-        toast.success("Friend request sent!");
+        toast.success(t("publicSpace.friendRequestSent"));
       }
       setSearchResults(searchResults.filter((u: any) => u.firebaseUid !== targetUid));
     } catch (error: any) {
-      toast.error(error?.response?.data?.error || "Failed to send request");
+      toast.error(error?.response?.data?.error || t("publicSpace.failedSendRequest"));
     } finally {
       setLoadingAction("");
     }
@@ -104,12 +106,12 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
       await axios.put(`${API_URL}/friend/accept/${requestId}`, {
         firebaseUid: user.uid,
       });
-      toast.success("Friend request accepted! 🎉");
+      toast.success(t("publicSpace.requestAccepted"));
       fetchFriends();
       fetchFriendRequests();
       onFriendUpdate();
     } catch (error) {
-      toast.error("Failed to accept request");
+      toast.error(t("publicSpace.acceptFailed"));
     } finally {
       setLoadingAction("");
     }
@@ -121,27 +123,27 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
       await axios.put(`${API_URL}/friend/reject/${requestId}`, {
         firebaseUid: user.uid,
       });
-      toast.info("Friend request rejected");
+      toast.info(t("publicSpace.requestRejected"));
       fetchFriendRequests();
     } catch (error) {
-      toast.error("Failed to reject request");
+      toast.error(t("publicSpace.rejectFailed"));
     } finally {
       setLoadingAction("");
     }
   };
 
   const removeFriend = async (friendUid: string) => {
-    if (!confirm("Remove this friend?")) return;
+    if (!confirm(t("publicSpace.removeFriendConfirm"))) return;
     setLoadingAction(friendUid);
     try {
       await axios.delete(`${API_URL}/friend/remove`, {
         data: { userUid: user.uid, friendUid },
       });
-      toast.info("Friend removed");
+      toast.info(t("publicSpace.friendRemoved"));
       fetchFriends();
       onFriendUpdate();
     } catch (error) {
-      toast.error("Failed to remove friend");
+      toast.error(t("publicSpace.removeFailed"));
     } finally {
       setLoadingAction("");
     }
@@ -173,13 +175,13 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-blue-50 rounded-lg p-2.5 text-center">
             <p className="text-lg font-bold text-blue-600">{friends.length}</p>
-            <p className="text-[10px] text-blue-600 font-medium">Friends</p>
+            <p className="text-[10px] text-blue-600 font-medium">{t("publicSpace.friends")}</p>
           </div>
           <div className="bg-green-50 rounded-lg p-2.5 text-center">
             <p className="text-lg font-bold text-green-600">
               {postLimit?.remaining === -1 ? "∞" : postLimit?.remaining ?? 0}
             </p>
-            <p className="text-[10px] text-green-600 font-medium">Posts Left</p>
+            <p className="text-[10px] text-green-600 font-medium">{t("publicSpace.postsLeft")}</p>
           </div>
         </div>
       </div>
@@ -189,7 +191,7 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <UserPlus size={16} className="text-blue-600" />
-            Friend Requests ({friendRequests.length})
+            {t("publicSpace.friendRequests")} ({friendRequests.length})
           </h3>
           <div className="space-y-2">
             {friendRequests.map((request: any) => (
@@ -220,7 +222,7 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
                     onClick={() => acceptRequest(request._id)}
                     disabled={loadingAction === request._id}
                     className="p-1.5 bg-green-100 text-green-600 rounded-md hover:bg-green-200 transition-colors disabled:opacity-50"
-                    title="Accept"
+                    title={t("publicSpace.accept")}
                   >
                     <UserCheck size={14} />
                   </button>
@@ -228,7 +230,7 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
                     onClick={() => rejectRequest(request._id)}
                     disabled={loadingAction === request._id}
                     className="p-1.5 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50"
-                    title="Reject"
+                    title={t("publicSpace.reject")}
                   >
                     <UserX size={14} />
                   </button>
@@ -243,7 +245,7 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
         <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <Search size={16} className="text-blue-600" />
-          Find Friends
+          {t("publicSpace.findFriends")}
         </h3>
         <div className="flex gap-2 mb-3">
           <input
@@ -251,7 +253,7 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Search by name..."
+            placeholder={t("publicSpace.searchByName")}
             className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
           />
           <button
@@ -298,7 +300,7 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
                   ) : (
                     <UserPlus size={12} />
                   )}
-                  Add
+                  {t("publicSpace.add")}
                 </button>
               </div>
             ))}
@@ -314,7 +316,7 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
         >
           <span className="flex items-center gap-2">
             <Users size={16} className="text-blue-600" />
-            My Friends ({friends.length})
+            {t("publicSpace.myFriends")} ({friends.length})
           </span>
           {showFriends ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
@@ -323,7 +325,7 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
           <div className="mt-3 space-y-2">
             {friends.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">
-                No friends yet. Search and add friends above!
+                {t("publicSpace.noFriendsYet")}
               </p>
             ) : (
               friends.map((friend: any) => (
@@ -353,7 +355,7 @@ const FriendSidebar = ({ user, postLimit, onFriendUpdate }: FriendSidebarProps) 
                     onClick={() => removeFriend(friend.firebaseUid)}
                     disabled={loadingAction === friend.firebaseUid}
                     className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
-                    title="Remove friend"
+                    title={t("publicSpace.removeFriend")}
                   >
                     <X size={14} />
                   </button>
