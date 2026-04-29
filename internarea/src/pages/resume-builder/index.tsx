@@ -330,7 +330,7 @@ export default function ResumeBuilder() {
       const { data } = await axios.post(`${API_BASE}/checkout`, {
         userId,
         verificationToken,
-      });
+      }, { timeout: 60000 }); // 60s timeout for Render cold start
 
       if (data && data.order) {
         const options = {
@@ -388,9 +388,14 @@ export default function ResumeBuilder() {
         paymentObject.open();
       }
     } catch (error: any) {
-      toast.error(
-        error.response?.data?.error || "Failed to create order."
-      );
+      if (error.code === "ERR_NETWORK" || error.message?.includes("Network")) {
+        toast.error("Cannot reach server. The backend may be starting up — please wait 30s and try again.");
+      } else {
+        toast.error(
+          error.response?.data?.error || "Failed to create order. Please try again."
+        );
+      }
+      console.error("Resume Payment Error:", error);
       setPaymentLoading(false);
     }
   };

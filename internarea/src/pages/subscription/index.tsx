@@ -131,11 +131,11 @@ export default function Subscription() {
       const { data } = await axios.post(API_URL, {
         userId: user._id || user.uid,
         plan: plan.planId,
-      });
+      }, { timeout: 60000 }); // 60s timeout for Render cold start
 
       if (data && data.order) {
         const options = {
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "YOUR_FRONTEND_RAZORPAY_KEY", 
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_SZ8YGtgg5U3Z9w", 
           amount: data.order.amount,
           currency: data.order.currency,
           name: "InternArea Subscriptions",
@@ -162,10 +162,14 @@ export default function Subscription() {
     } catch (error: any) {
       if (error.response && error.response.status === 403) {
         toast.error(error.response.data.error || "Payments not allowed at this time.");
+      } else if (error.response) {
+        toast.error(error.response.data?.error || `Server error (${error.response.status}). Please try again.`);
+      } else if (error.code === "ERR_NETWORK" || error.message?.includes("Network")) {
+        toast.error("Cannot reach server. The backend may be starting up — please wait 30s and try again.");
       } else {
-        toast.error("Failed to create order. Is your backend running?");
+        toast.error("Failed to create order. Please try again later.");
       }
-      console.error(error);
+      console.error("Payment Error:", error);
     }
     setLoading(false);
   };
