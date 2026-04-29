@@ -59,7 +59,7 @@ router.post("/checkout", async (req, res) => {
     const options = {
       amount,
       currency: "INR",
-      receipt: `receipt_${userId}_${Date.now()}`,
+      receipt: `rcpt_${userId.slice(-8)}_${Date.now()}`.slice(0, 40),
       notes: {
         userId,
         plan,

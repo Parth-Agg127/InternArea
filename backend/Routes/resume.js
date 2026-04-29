@@ -180,7 +180,7 @@ router.post("/checkout", async (req, res) => {
     const options = {
       amount: 5000, // ₹50 in paise
       currency: "INR",
-      receipt: `resume_${userId}_${Date.now()}`,
+      receipt: `res_${userId.slice(-8)}_${Date.now()}`.slice(0, 40),
       notes: {
         userId,
         purpose: "resume_generation",

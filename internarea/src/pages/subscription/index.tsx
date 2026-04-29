@@ -128,14 +128,24 @@ export default function Subscription() {
       // Production URL for Vercel / Render deployment
       const API_URL = "https://internarea-1-n2uz.onrender.com/api/payment/checkout"; 
       
+      const userId = user._id || user.uid;
+      console.log("[Payment Debug] User object:", JSON.stringify(user));
+      console.log("[Payment Debug] userId being sent:", userId);
+      console.log("[Payment Debug] plan being sent:", plan.planId);
+
       const { data } = await axios.post(API_URL, {
-        userId: user._id || user.uid,
+        userId,
         plan: plan.planId,
       }, { timeout: 60000 }); // 60s timeout for Render cold start
 
+      console.log("[Payment Debug] Order created successfully:", data);
+
       if (data && data.order) {
+        const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_SZ8YGtgg5U3Z9w";
+        console.log("[Payment Debug] Using Razorpay key:", razorpayKey);
+        
         const options = {
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_SZ8YGtgg5U3Z9w", 
+          key: razorpayKey, 
           amount: data.order.amount,
           currency: data.order.currency,
           name: "InternArea Subscriptions",
@@ -160,6 +170,11 @@ export default function Subscription() {
         paymentObject.open();
       }
     } catch (error: any) {
+      console.error("[Payment Debug] Full error object:", error);
+      console.error("[Payment Debug] Error response:", error.response?.data);
+      console.error("[Payment Debug] Error status:", error.response?.status);
+      console.error("[Payment Debug] Error message:", error.message);
+      
       if (error.response && error.response.status === 403) {
         toast.error(error.response.data.error || "Payments not allowed at this time.");
       } else if (error.response) {
@@ -169,7 +184,6 @@ export default function Subscription() {
       } else {
         toast.error("Failed to create order. Please try again later.");
       }
-      console.error("Payment Error:", error);
     }
     setLoading(false);
   };
