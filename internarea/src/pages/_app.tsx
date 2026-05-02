@@ -38,6 +38,13 @@ function AuthListener() {
         );
 
         if (isGoogleUser) {
+          // IMPORTANT: If a Google login is currently in progress (initiated from Navbar),
+          // do NOT auto-dispatch login here. The Navbar's handlelogin() will handle it
+          // after checking OTP requirements. This prevents bypassing Chrome OTP verification.
+          if ((window as any).__GOOGLE_LOGIN_IN_PROGRESS__) {
+            return;
+          }
+
           dispatch(
             login({
               uid: authuser.uid,
