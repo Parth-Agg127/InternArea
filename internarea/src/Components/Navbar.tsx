@@ -99,14 +99,28 @@ const Navbar = () => {
         toast.success(t("toast.loginSuccess"));
       } catch (syncErr: any) {
         (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
-        // Handle mobile time restriction
+        // Handle mobile time restriction — explicit security block
         if (syncErr.response?.status === 403 && syncErr.response?.data?.blockedReason === "mobile_time_restriction") {
           toast.error("📱 Mobile login is only allowed between 10:00 AM and 1:00 PM IST");
           // Sign out from Firebase since login is blocked
           await signOut(auth);
           return;
         }
-        console.error("User sync error:", syncErr);
+
+        // For any other backend failure (server down, email service error, etc.),
+        // still allow the user to log in as a fallback to avoid getting stuck.
+        console.warn("User sync failed, proceeding with login anyway:", syncErr.message);
+        dispatch(
+          login({
+            uid: authuser.uid,
+            photo: authuser.photoURL,
+            name: authuser.displayName,
+            email: authuser.email,
+            phoneNumber: authuser.phoneNumber,
+            authProvider: "google",
+          })
+        );
+        toast.success(t("toast.loginSuccess"));
       }
 
       setIsMobileMenuOpen(false);
