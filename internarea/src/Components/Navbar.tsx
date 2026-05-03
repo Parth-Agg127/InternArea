@@ -35,6 +35,24 @@ const Navbar = () => {
   } | null>(null);
   // Hold Google user data while waiting for OTP
   const [pendingGoogleUser, setPendingGoogleUser] = useState<any>(null);
+  // Loading state while sync call is in progress
+  const [syncLoading, setSyncLoading] = useState(false);
+
+  // Restore pending Chrome OTP state from sessionStorage on mount
+  // (so the OTP modal survives page reload)
+  useEffect(() => {
+    const pending = sessionStorage.getItem("pendingChromeOTP");
+    if (pending) {
+      try {
+        const data = JSON.parse(pending);
+        setPendingGoogleUser(data.user);
+        setChromeOTPData(data.otp);
+        setShowChromeOTP(true);
+      } catch (e) {
+        sessionStorage.removeItem("pendingChromeOTP");
+      }
+    }
+  }, []);
 
   /** Collect device info from browser */
   const getDeviceInfo = () => ({
@@ -47,6 +65,7 @@ const Navbar = () => {
     // Set flag to prevent AuthListener from auto-dispatching login
     // while we check OTP requirements
     (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = true;
+    setSyncLoading(true);
 
     try {
       const result = await signInWithPopup(auth, provider);
@@ -68,18 +87,28 @@ const Navbar = () => {
         // Check if Chrome OTP is required
         if (syncData.requiresOTP) {
           // Don't dispatch login yet — wait for OTP
-          // Keep __GOOGLE_LOGIN_IN_PROGRESS__ = true until OTP is verified/cancelled
-          setPendingGoogleUser({
+          const userData = {
             uid: authuser.uid,
             photo: authuser.photoURL,
             name: authuser.displayName,
             email: authuser.email,
             phoneNumber: authuser.phoneNumber,
             authProvider: "google",
-          });
-          setChromeOTPData({ email: syncData.email, loginId: syncData.loginId });
+          };
+          const otpData = { email: syncData.email, loginId: syncData.loginId };
+
+          setPendingGoogleUser(userData);
+          setChromeOTPData(otpData);
           setShowChromeOTP(true);
+
+          // Persist to sessionStorage so OTP modal survives page reload
+          sessionStorage.setItem("pendingChromeOTP", JSON.stringify({
+            user: userData,
+            otp: otpData,
+          }));
+
           toast.info("OTP sent to your email for Chrome verification.");
+          setSyncLoading(false);
           setIsMobileMenuOpen(false);
           return;
         }
@@ -104,6 +133,7 @@ const Navbar = () => {
           toast.error("📱 Mobile login is only allowed between 10:00 AM and 1:00 PM IST");
           // Sign out from Firebase since login is blocked
           await signOut(auth);
+          setSyncLoading(false);
           return;
         }
 
@@ -123,9 +153,11 @@ const Navbar = () => {
         toast.success(t("toast.loginSuccess"));
       }
 
+      setSyncLoading(false);
       setIsMobileMenuOpen(false);
     } catch (error) {
       (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
+      setSyncLoading(false);
       console.error(error);
       toast.error(t("toast.loginFailed"));
     }
@@ -136,8 +168,9 @@ const Navbar = () => {
     setShowChromeOTP(false);
     setChromeOTPData(null);
 
-    // Clear the flag — OTP verified, safe to complete login
+    // Clear the flag and sessionStorage — OTP verified, safe to complete login
     (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
+    sessionStorage.removeItem("pendingChromeOTP");
 
     // Dispatch the pending Google user data
     if (pendingGoogleUser) {
@@ -152,8 +185,9 @@ const Navbar = () => {
     setShowChromeOTP(false);
     setChromeOTPData(null);
     setPendingGoogleUser(null);
-    // Clear the flag — login was cancelled
+    // Clear the flag and sessionStorage — login was cancelled
     (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
+    sessionStorage.removeItem("pendingChromeOTP");
     // Sign out from Firebase since OTP was cancelled
     await signOut(auth);
   };
@@ -161,6 +195,7 @@ const Navbar = () => {
   const handlelogout = () => {
     signOut(auth);
     localStorage.removeItem("emailUser");
+    sessionStorage.removeItem("pendingChromeOTP");
     dispatch(logout());
     setIsMobileMenuOpen(false);
   };
@@ -334,29 +369,39 @@ const Navbar = () => {
                     <>
                       <button
                         onClick={handlelogin}
-                        className="bg-white border border-gray-300 rounded-lg px-4 py-2 flex items-center justify-center space-x-2 hover:bg-gray-50 transition-colors"
+                        disabled={syncLoading}
+                        className="bg-white border border-gray-300 rounded-lg px-4 py-2 flex items-center justify-center space-x-2 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-wait"
                       >
-                        <svg className="w-5 h-5" viewBox="0 0 24 24">
-                          <path
-                            fill="#4285F4"
-                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                          />
-                          <path
-                            fill="#34A853"
-                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                          />
-                          <path
-                            fill="#FBBC05"
-                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                          />
-                          <path
-                            fill="#EA4335"
-                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                          />
-                        </svg>
-                        <span className="text-gray-700">
-                          {t("navbar.googleLogin")}
-                        </span>
+                        {syncLoading ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-gray-500">Verifying...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5" viewBox="0 0 24 24">
+                              <path
+                                fill="#4285F4"
+                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                              />
+                              <path
+                                fill="#34A853"
+                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                              />
+                              <path
+                                fill="#FBBC05"
+                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                              />
+                              <path
+                                fill="#EA4335"
+                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                              />
+                            </svg>
+                            <span className="text-gray-700">
+                              {t("navbar.googleLogin")}
+                            </span>
+                          </>
+                        )}
                       </button>
                       <Link
                         href="/emailauth"
@@ -525,27 +570,37 @@ const Navbar = () => {
                 <div className="space-y-3">
                   <button
                     onClick={handlelogin}
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 flex items-center justify-center space-x-2 hover:bg-gray-50 transition-colors"
+                    disabled={syncLoading}
+                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 flex items-center justify-center space-x-2 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-wait"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
-                      <path
-                        fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
-                    </svg>
-                    <span className="text-gray-700">{t("navbar.googleLogin")}</span>
+                    {syncLoading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-gray-500">Verifying...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" viewBox="0 0 24 24">
+                          <path
+                            fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                          />
+                          <path
+                            fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                          />
+                        </svg>
+                        <span className="text-gray-700">{t("navbar.googleLogin")}</span>
+                      </>
+                    )}
                   </button>
                   <Link
                     href="/emailauth"
