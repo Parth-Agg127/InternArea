@@ -45,12 +45,6 @@ function AuthListener() {
             return;
           }
 
-          // Also skip auto-login if there's a pending Chrome OTP verification
-          // (e.g., user reloaded the page while the OTP modal was showing)
-          if (sessionStorage.getItem("pendingChromeOTP")) {
-            return;
-          }
-
           dispatch(
             login({
               uid: authuser.uid,
@@ -81,10 +75,9 @@ function AuthListener() {
           }
         }
       } else {
-        // Only logout if there's no email user stored and no pending OTP verification
+        // Only logout if there's no email user stored
         const emailUser = localStorage.getItem("emailUser");
-        const pendingOTP = sessionStorage.getItem("pendingChromeOTP");
-        if (!emailUser && !pendingOTP) {
+        if (!emailUser) {
           dispatch(logout());
         }
       }
