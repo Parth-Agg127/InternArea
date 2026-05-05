@@ -61,7 +61,7 @@ const Navbar = () => {
           photo: authuser.photoURL,
           phoneNumber: authuser.phoneNumber,
           deviceInfo: getDeviceInfo(),
-        });
+        }, { timeout: 30000 });
 
         const syncData = syncRes.data;
 
@@ -98,29 +98,23 @@ const Navbar = () => {
         );
         toast.success(t("toast.loginSuccess"));
       } catch (syncErr: any) {
-        (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
         // Handle mobile time restriction — explicit security block
         if (syncErr.response?.status === 403 && syncErr.response?.data?.blockedReason === "mobile_time_restriction") {
+          (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
           toast.error("📱 Mobile login is only allowed between 10:00 AM and 1:00 PM IST");
           // Sign out from Firebase since login is blocked
           await signOut(auth);
           return;
         }
 
-        // For any other backend failure (server down, email service error, etc.),
-        // still allow the user to log in as a fallback to avoid getting stuck.
-        console.warn("User sync failed, proceeding with login anyway:", syncErr.message);
-        dispatch(
-          login({
-            uid: authuser.uid,
-            photo: authuser.photoURL,
-            name: authuser.displayName,
-            email: authuser.email,
-            phoneNumber: authuser.phoneNumber,
-            authProvider: "google",
-          })
-        );
-        toast.success(t("toast.loginSuccess"));
+        // CRITICAL: Do NOT auto-login on backend failure.
+        // If we can't verify whether Chrome OTP is required, we must NOT bypass security.
+        // Sign out from Firebase and ask user to try again.
+        (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
+        console.error("User sync error:", syncErr);
+        await signOut(auth);
+        toast.error("Server is waking up. Please try again in a few seconds.");
+        return;
       }
 
       setIsMobileMenuOpen(false);

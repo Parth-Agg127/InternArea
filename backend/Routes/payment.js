@@ -92,14 +92,19 @@ router.post("/webhook", async (req, res) => {
 
       try {
         // Upgrade user plan
+        // NOTE: userId from notes is a firebaseUid (sent from frontend), not a MongoDB _id
         const expiryDate = new Date();
         expiryDate.setMonth(expiryDate.getMonth() + 1); // 1 month validity
 
-        const updatedUser = await User.findByIdAndUpdate(userId, {
-          currentPlan: plan,
-          applicationsUsedThisMonth: 0,
-          planExpiryDate: expiryDate,
-        }, { new: true });
+        const updatedUser = await User.findOneAndUpdate(
+          { firebaseUid: userId },
+          {
+            currentPlan: plan,
+            applicationsUsedThisMonth: 0,
+            planExpiryDate: expiryDate,
+          },
+          { new: true }
+        );
 
         // Send Invoice Email
         if (updatedUser && updatedUser.email) {
@@ -114,6 +119,58 @@ router.post("/webhook", async (req, res) => {
   } else {
     // Invalid Signature
     res.status(400).json({ error: "Invalid Signature" });
+  }
+});
+
+// 3. Verify Payment Endpoint — called by frontend after successful Razorpay payment
+//    This ensures the plan is upgraded even if the webhook doesn't fire (common in test mode)
+router.post("/verify-payment", async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, userId, plan } = req.body;
+
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !userId || !plan) {
+    return res.status(400).json({ error: "Missing required payment verification fields." });
+  }
+
+  // Verify the payment signature using Razorpay's standard method
+  const secret = process.env.RAZORPAY_KEY_SECRET;
+  const body = razorpay_order_id + "|" + razorpay_payment_id;
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(body)
+    .digest("hex");
+
+  if (expectedSignature !== razorpay_signature) {
+    return res.status(400).json({ error: "Invalid payment signature. Payment verification failed." });
+  }
+
+  // Signature is valid — upgrade the user's plan
+  try {
+    const expiryDate = new Date();
+    expiryDate.setMonth(expiryDate.getMonth() + 1); // 1 month validity
+
+    const updatedUser = await User.findOneAndUpdate(
+      { firebaseUid: userId },
+      {
+        currentPlan: plan,
+        applicationsUsedThisMonth: 0,
+        planExpiryDate: expiryDate,
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      currentPlan: updatedUser.currentPlan,
+      planExpiryDate: updatedUser.planExpiryDate,
+      message: `Plan upgraded to ${plan} successfully!`,
+    });
+  } catch (err) {
+    console.error("Error verifying payment:", err);
+    res.status(500).json({ error: "Failed to verify payment and upgrade plan." });
   }
 });
 

@@ -128,9 +128,10 @@ export default function Subscription() {
       // Production URL for Vercel / Render deployment
       const API_URL = "https://internarea-1-n2uz.onrender.com/api/payment/checkout"; 
       
-      const userId = user._id || user.uid;
+      // Always use the Firebase UID — this is what the backend uses to find the user
+      const userId = user.uid;
       console.log("[Payment Debug] User object:", JSON.stringify(user));
-      console.log("[Payment Debug] userId being sent:", userId);
+      console.log("[Payment Debug] userId (firebaseUid) being sent:", userId);
       console.log("[Payment Debug] plan being sent:", plan.planId);
 
       const { data } = await axios.post(API_URL, {
@@ -151,10 +152,31 @@ export default function Subscription() {
           name: "InternArea Subscriptions",
           description: `Upgrade to ${plan.name} Plan`,
           order_id: data.order.id,
-          handler: function (response: any) {
-            toast.success(`Payment Successful! Your plan has been upgraded to ${plan.name}.`);
-            setCurrentPlan(plan.name);
-            // The backend webhook will automatically catch this and send the email
+          handler: async function (response: any) {
+            // After successful payment, verify & persist the plan upgrade on the backend
+            try {
+              const verifyRes = await axios.post(
+                "https://internarea-1-n2uz.onrender.com/api/payment/verify-payment",
+                {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  userId,
+                  plan: plan.planId,
+                },
+                { timeout: 30000 }
+              );
+
+              if (verifyRes.data.success) {
+                setCurrentPlan(plan.name);
+                toast.success(`Payment Successful! Your plan has been upgraded to ${plan.name}.`);
+              } else {
+                toast.error("Payment received but plan upgrade failed. Please contact support.");
+              }
+            } catch (verifyErr) {
+              console.error("[Payment Debug] Verify payment error:", verifyErr);
+              toast.error("Payment received but verification failed. Please contact support.");
+            }
           },
           prefill: {
             name: user.name || "User",
