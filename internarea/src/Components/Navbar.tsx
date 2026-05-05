@@ -36,6 +36,43 @@ const Navbar = () => {
   // Hold Google user data while waiting for OTP
   const [pendingGoogleUser, setPendingGoogleUser] = useState<any>(null);
 
+  /** Helper: set the login-pending flag in both window and sessionStorage */
+  const setLoginPending = (pending: boolean) => {
+    (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = pending;
+    if (pending) {
+      sessionStorage.setItem("__google_login_pending__", "true");
+    } else {
+      sessionStorage.removeItem("__google_login_pending__");
+      sessionStorage.removeItem("__chrome_otp_data__");
+    }
+  };
+
+  /** On mount, restore OTP modal if there's a pending verification from a previous page load */
+  useEffect(() => {
+    const otpDataStr = sessionStorage.getItem("__chrome_otp_data__");
+    if (otpDataStr) {
+      try {
+        const otpData = JSON.parse(otpDataStr);
+        setChromeOTPData(otpData);
+        setShowChromeOTP(true);
+        // Restore pending user from current Firebase auth state
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          setPendingGoogleUser({
+            uid: currentUser.uid,
+            photo: currentUser.photoURL,
+            name: currentUser.displayName,
+            email: currentUser.email,
+            phoneNumber: currentUser.phoneNumber,
+            authProvider: "google",
+          });
+        }
+      } catch (e) {
+        setLoginPending(false);
+      }
+    }
+  }, []);
+
   /** Collect device info from browser */
   const getDeviceInfo = () => ({
     userAgent: navigator.userAgent,
@@ -45,8 +82,8 @@ const Navbar = () => {
 
   const handlelogin = async () => {
     // Set flag to prevent AuthListener from auto-dispatching login
-    // while we check OTP requirements
-    (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = true;
+    // while we check OTP requirements (survives page reload via sessionStorage)
+    setLoginPending(true);
 
     try {
       const result = await signInWithPopup(auth, provider);
@@ -68,7 +105,9 @@ const Navbar = () => {
         // Check if Chrome OTP is required
         if (syncData.requiresOTP) {
           // Don't dispatch login yet — wait for OTP
-          // Keep __GOOGLE_LOGIN_IN_PROGRESS__ = true until OTP is verified/cancelled
+          // Persist OTP data to sessionStorage so it survives page reload
+          const otpInfo = { email: syncData.email, loginId: syncData.loginId };
+          sessionStorage.setItem("__chrome_otp_data__", JSON.stringify(otpInfo));
           setPendingGoogleUser({
             uid: authuser.uid,
             photo: authuser.photoURL,
@@ -77,7 +116,7 @@ const Navbar = () => {
             phoneNumber: authuser.phoneNumber,
             authProvider: "google",
           });
-          setChromeOTPData({ email: syncData.email, loginId: syncData.loginId });
+          setChromeOTPData(otpInfo);
           setShowChromeOTP(true);
           toast.info("OTP sent to your email for Chrome verification.");
           setIsMobileMenuOpen(false);
@@ -85,7 +124,7 @@ const Navbar = () => {
         }
 
         // Normal login (no OTP needed) — clear flag and dispatch
-        (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
+        setLoginPending(false);
         dispatch(
           login({
             uid: authuser.uid,
@@ -100,7 +139,7 @@ const Navbar = () => {
       } catch (syncErr: any) {
         // Handle mobile time restriction — explicit security block
         if (syncErr.response?.status === 403 && syncErr.response?.data?.blockedReason === "mobile_time_restriction") {
-          (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
+          setLoginPending(false);
           toast.error("📱 Mobile login is only allowed between 10:00 AM and 1:00 PM IST");
           // Sign out from Firebase since login is blocked
           await signOut(auth);
@@ -110,7 +149,7 @@ const Navbar = () => {
         // CRITICAL: Do NOT auto-login on backend failure.
         // If we can't verify whether Chrome OTP is required, we must NOT bypass security.
         // Sign out from Firebase and ask user to try again.
-        (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
+        setLoginPending(false);
         console.error("User sync error:", syncErr);
         await signOut(auth);
         toast.error("Server is waking up. Please try again in a few seconds.");
@@ -119,7 +158,7 @@ const Navbar = () => {
 
       setIsMobileMenuOpen(false);
     } catch (error) {
-      (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
+      setLoginPending(false);
       console.error(error);
       toast.error(t("toast.loginFailed"));
     }
@@ -131,7 +170,7 @@ const Navbar = () => {
     setChromeOTPData(null);
 
     // Clear the flag — OTP verified, safe to complete login
-    (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
+    setLoginPending(false);
 
     // Dispatch the pending Google user data
     if (pendingGoogleUser) {
@@ -147,7 +186,7 @@ const Navbar = () => {
     setChromeOTPData(null);
     setPendingGoogleUser(null);
     // Clear the flag — login was cancelled
-    (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ = false;
+    setLoginPending(false);
     // Sign out from Firebase since OTP was cancelled
     await signOut(auth);
   };

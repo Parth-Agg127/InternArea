@@ -38,10 +38,15 @@ function AuthListener() {
         );
 
         if (isGoogleUser) {
-          // IMPORTANT: If a Google login is currently in progress (initiated from Navbar),
+          // IMPORTANT: If a Google login / Chrome OTP verification is in progress,
           // do NOT auto-dispatch login here. The Navbar's handlelogin() will handle it
           // after checking OTP requirements. This prevents bypassing Chrome OTP verification.
-          if ((window as any).__GOOGLE_LOGIN_IN_PROGRESS__) {
+          // We check BOTH the volatile window flag (for same-page-load) AND sessionStorage
+          // (which survives page reloads within the same tab).
+          if (
+            (window as any).__GOOGLE_LOGIN_IN_PROGRESS__ ||
+            sessionStorage.getItem("__google_login_pending__")
+          ) {
             return;
           }
 
